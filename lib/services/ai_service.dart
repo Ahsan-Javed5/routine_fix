@@ -17,10 +17,16 @@ class AiService {
     );
 
     final prompt = '''
-Generate a helpful daily routine for this goal: "$goal".
-Return EXACTLY a JSON array of 3 to 5 tasks.
-Each item format: {"title": string, "description": string, "time": "HH:mm"}
-No extra text, only the JSON array.
+Generate a practical daily routine for this goal: "$goal".
+
+Return EXACTLY a JSON array containing 3 to 5 tasks.
+Each task must have:
+- "title": short, clear task name (max 6 words)
+- "description": brief actionable instruction (max 12 words)
+- "time": suggested time in HH:mm format
+
+Keep tasks specific, realistic, and non-repetitive.
+No extra text. Return only the JSON array.
 ''';
 
     final response = await model.generateContent([Content.text(prompt)]);
