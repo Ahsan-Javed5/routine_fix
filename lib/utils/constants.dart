@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import '../models/task_model.dart';
 
-Color priorityColor(Priority p) {
+Color priorityColor(TaskPriority p) {
   switch (p) {
-    case Priority.high:
+    case TaskPriority.high:
       return Colors.redAccent;
-    case Priority.medium:
+    case TaskPriority.medium:
       return Colors.orangeAccent;
-    case Priority.low:
+    case TaskPriority.low:
       return Colors.green;
   }
 }
 
-String priorityLabel(Priority p) {
+String priorityLabel(TaskPriority p) {
   switch (p) {
-    case Priority.high:
+    case TaskPriority.high:
       return 'High';
-    case Priority.medium:
+    case TaskPriority.medium:
       return 'Medium';
-    case Priority.low:
+    case TaskPriority.low:
       return 'Low';
   }
 }

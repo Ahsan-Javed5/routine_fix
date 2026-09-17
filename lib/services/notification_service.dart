@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import '../models/task_model.dart';
@@ -12,6 +13,9 @@ class NotificationService {
 
   Future<void> init() async {
     tzdata.initializeTimeZones();
+    final TimezoneInfo currentTimeZone =
+        await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(currentTimeZone.identifier));
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();
@@ -19,10 +23,17 @@ class NotificationService {
         InitializationSettings(android: androidInit, iOS: iosInit);
     await _plugin.initialize(initSettings);
 
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+
+    if (androidPlugin != null) {
+      // Normal Notification Permission (Android 13+)
+      await androidPlugin.requestNotificationsPermission();
+
+      // Exact Alarms Permission (Required for precise scheduling)
+      await androidPlugin.requestExactAlarmsPermission();
+    }
+
     await _plugin
         .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin>()
@@ -54,9 +65,11 @@ class NotificationService {
         'task_channel',
         'Task Reminders',
         channelDescription: 'Reminders for scheduled tasks',
-        importance: Importance.high,
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
       ),
-      iOS: DarwinNotificationDetails(),
+      iOS: const DarwinNotificationDetails(),
     );
 
     if (beforeTime.isAfter(tz.TZDateTime.now(tz.local))) {
@@ -79,7 +92,7 @@ class NotificationService {
         '${task.title} - it\'s time now.',
         scheduledTime,
         details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );

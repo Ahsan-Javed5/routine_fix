@@ -14,10 +14,13 @@ class AddTaskView extends GetView<TaskController> {
     final Rx<DateTime?> pickedDate = Rx<DateTime?>(null);
     final Rx<TimeOfDay?> pickedTime = Rx<TimeOfDay?>(null);
     final Rx<Repetition> repetition = Repetition.none.obs;
-    final Rx<Priority> priority = Priority.medium.obs;
+    final Rx<TaskPriority> priority = TaskPriority.medium.obs;
     final RxBool isOneTime = false.obs;
     final RxList<int> customDays = <int>[].obs;
     final RxInt duration = 30.obs;
+
+    bool _requiresDate() =>
+        isOneTime.value || repetition.value == Repetition.none;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add Task')),
@@ -30,12 +33,14 @@ class AddTaskView extends GetView<TaskController> {
             children: [
               TextField(
                 controller: titleCtrl,
-                decoration: const InputDecoration(labelText: 'Title', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: 'Title', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: descCtrl,
-                decoration: const InputDecoration(labelText: 'Description', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: 'Description', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
             ],
@@ -46,13 +51,20 @@ class AddTaskView extends GetView<TaskController> {
             children: [
               Obx(() => _pickerTile(
                     icon: Icons.calendar_today_rounded,
-                    label: pickedDate.value == null ? 'Task date (optional)' : pickedDate.value!.toLocal().toString().split(' ')[0],
+                    label: pickedDate.value == null
+                        ? (_requiresDate()
+                            ? 'Task date (required)'
+                            : 'Task date (optional — repeats from today)')
+                        : pickedDate.value!.toLocal().toString().split(' ')[0],
+                    highlight: _requiresDate() && pickedDate.value == null,
                     onTap: () async {
                       final d = await showDatePicker(
                         context: context,
                         initialDate: DateTime.now(),
-                        firstDate: DateTime.now().subtract(const Duration(days: 1)),
-                        lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                        firstDate:
+                            DateTime.now().subtract(const Duration(days: 1)),
+                        lastDate:
+                            DateTime.now().add(const Duration(days: 365 * 2)),
                       );
                       if (d != null) pickedDate.value = d;
                     },
@@ -60,9 +72,12 @@ class AddTaskView extends GetView<TaskController> {
               const SizedBox(height: 8),
               Obx(() => _pickerTile(
                     icon: Icons.access_time_rounded,
-                    label: pickedTime.value == null ? 'Task time (optional)' : pickedTime.value!.format(context),
+                    label: pickedTime.value == null
+                        ? 'Task time (optional)'
+                        : pickedTime.value!.format(context),
                     onTap: () async {
-                      final t = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+                      final t = await showTimePicker(
+                          context: context, initialTime: TimeOfDay.now());
                       if (t != null) pickedTime.value = t;
                     },
                   )),
@@ -84,7 +99,8 @@ class AddTaskView extends GetView<TaskController> {
                     }).toList(),
                   )),
               Obx(() {
-                if (repetition.value != Repetition.custom) return const SizedBox.shrink();
+                if (repetition.value != Repetition.custom)
+                  return const SizedBox.shrink();
                 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
                 return Padding(
                   padding: const EdgeInsets.only(top: 12),
@@ -95,7 +111,9 @@ class AddTaskView extends GetView<TaskController> {
                       return FilterChip(
                         label: Text(days[i]),
                         selected: customDays.contains(dayNum),
-                        onSelected: (sel) => sel ? customDays.add(dayNum) : customDays.remove(dayNum),
+                        onSelected: (sel) => sel
+                            ? customDays.add(dayNum)
+                            : customDays.remove(dayNum),
                       );
                     }),
                   ),
@@ -105,6 +123,7 @@ class AddTaskView extends GetView<TaskController> {
               Obx(() => CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('One-time task (specific day only)'),
+                    subtitle: const Text('Requires a task date below'),
                     value: isOneTime.value,
                     onChanged: (v) => isOneTime.value = v ?? false,
                   )),
@@ -118,12 +137,16 @@ class AddTaskView extends GetView<TaskController> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       IconButton.filledTonal(
-                        onPressed: () => duration.value = (duration.value - 5).clamp(5, 480),
+                        onPressed: () =>
+                            duration.value = (duration.value - 5).clamp(5, 480),
                         icon: const Icon(Icons.remove_rounded),
                       ),
-                      Text('${duration.value} min', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text('${duration.value} min',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
                       IconButton.filledTonal(
-                        onPressed: () => duration.value = (duration.value + 5).clamp(5, 480),
+                        onPressed: () =>
+                            duration.value = (duration.value + 5).clamp(5, 480),
                         icon: const Icon(Icons.add_rounded),
                       ),
                     ],
@@ -134,12 +157,13 @@ class AddTaskView extends GetView<TaskController> {
             title: 'Priority',
             icon: Icons.flag_rounded,
             children: [
-              Obx(() => SegmentedButton<Priority>(
-                    segments: Priority.values.map((p) {
+              Obx(() => SegmentedButton<TaskPriority>(
+                    segments: TaskPriority.values.map((p) {
                       return ButtonSegment(
                         value: p,
                         label: Text(priorityLabel(p)),
-                        icon: Icon(Icons.circle, size: 12, color: priorityColor(p)),
+                        icon: Icon(Icons.circle,
+                            size: 12, color: priorityColor(p)),
                       );
                     }).toList(),
                     selected: {priority.value},
@@ -156,6 +180,11 @@ class AddTaskView extends GetView<TaskController> {
                   Get.snackbar('Missing title', 'Please enter a task title');
                   return;
                 }
+                if (_requiresDate() && pickedDate.value == null) {
+                  Get.snackbar('Missing date',
+                      'One-time / non-repeating tasks need a task date, otherwise they will never appear on any day.');
+                  return;
+                }
                 final task = TaskModel(
                   id: controller.newId(),
                   title: titleCtrl.text.trim(),
@@ -164,7 +193,8 @@ class AddTaskView extends GetView<TaskController> {
                   taskTime: pickedTime.value != null
                       ? '${pickedTime.value!.hour.toString().padLeft(2, '0')}:${pickedTime.value!.minute.toString().padLeft(2, '0')}'
                       : null,
-                  repetition: isOneTime.value ? Repetition.none : repetition.value,
+                  repetition:
+                      isOneTime.value ? Repetition.none : repetition.value,
                   customDays: customDays.toList(),
                   durationMinutes: duration.value,
                   priority: priority.value,
@@ -184,7 +214,10 @@ class AddTaskView extends GetView<TaskController> {
 
   String _repLabel(Repetition r) => repetitionLabel(r);
 
-  Widget _sectionCard({required String title, required IconData icon, required List<Widget> children}) {
+  Widget _sectionCard(
+      {required String title,
+      required IconData icon,
+      required List<Widget> children}) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -195,7 +228,9 @@ class AddTaskView extends GetView<TaskController> {
               children: [
                 Icon(icon, size: 18, color: AppColors.signalTeal),
                 const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 14)),
               ],
             ),
             const SizedBox(height: 12),
@@ -206,22 +241,35 @@ class AddTaskView extends GetView<TaskController> {
     );
   }
 
-  Widget _pickerTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _pickerTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap,
+      bool highlight = false}) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(
+              color: highlight ? Colors.redAccent : Colors.grey.shade300,
+              width: highlight ? 1.4 : 1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: Colors.grey[600]),
+            Icon(icon,
+                size: 18,
+                color: highlight ? Colors.redAccent : Colors.grey[600]),
             const SizedBox(width: 10),
-            Expanded(child: Text(label)),
-            const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
+            Expanded(
+                child: Text(label,
+                    style: highlight
+                        ? const TextStyle(color: Colors.redAccent)
+                        : null)),
+            Icon(Icons.chevron_right_rounded,
+                size: 18, color: highlight ? Colors.redAccent : Colors.grey),
           ],
         ),
       ),

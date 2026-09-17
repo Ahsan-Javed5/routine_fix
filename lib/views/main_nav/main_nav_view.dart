@@ -39,11 +39,22 @@ class _MainNavViewState extends State<MainNavView> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      appBar: AppBar(title: Text(_titles[_index])),
-      drawer: _AppDrawer(onSelect: (i) {
-        setState(() => _index = i);
-        Navigator.pop(context);
-      }),
+      appBar: AppBar(
+        title: Text(
+          _titles[_index],
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: false,
+        elevation: 0,
+        scrolledUnderElevation: 2,
+      ),
+      drawer: _AppDrawer(
+        selectedIndex: _index,
+        onSelect: (i) {
+          setState(() => _index = i);
+          Navigator.pop(context);
+        },
+      ),
       body: IndexedStack(index: _index, children: _pages),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: _index == 3
@@ -63,15 +74,28 @@ class _MainNavViewState extends State<MainNavView> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
+        elevation: 3,
         destinations: const [
           NavigationDestination(
-              icon: Icon(Icons.checklist_rounded), label: 'Home'),
+            icon: Icon(Icons.checklist_rounded),
+            selectedIcon: Icon(Icons.checklist_rounded),
+            label: 'Home',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.event_available_rounded), label: 'Occasional'),
+            icon: Icon(Icons.event_available_outlined),
+            selectedIcon: Icon(Icons.event_available_rounded),
+            label: 'Occasional',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.insights_rounded), label: 'Reports'),
+            icon: Icon(Icons.insights_outlined),
+            selectedIcon: Icon(Icons.insights_rounded),
+            label: 'Reports',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.settings_rounded), label: 'Settings'),
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings_rounded),
+            label: 'Settings',
+          ),
         ],
       ),
     );
@@ -95,47 +119,52 @@ class _ExpandableFab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        AnimatedScale(
-          scale: isOpen ? 1 : 0,
-          duration: const Duration(milliseconds: 400),
+        AnimatedSlide(
+          offset: isOpen ? Offset.zero : const Offset(0, 0.3),
+          duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutBack,
           child: AnimatedOpacity(
             opacity: isOpen ? 1 : 0,
-            duration: const Duration(milliseconds: 150),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _miniAction(
-                  icon: Icons.event_note_rounded,
-                  label: 'Occasion',
-                  color: AppColors.amberGold,
-                  onTap: onAddOccasional,
-                ),
-                const SizedBox(height: 10),
-                _miniAction(
-                  icon: Icons.task_alt_rounded,
-                  label: 'Task',
-                  color: AppColors.signalTeal,
-                  onTap: onAddTask,
-                ),
-                const SizedBox(height: 14),
-              ],
+            duration: const Duration(milliseconds: 180),
+            child: IgnorePointer(
+              ignoring: !isOpen,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _miniAction(
+                    icon: Icons.event_note_rounded,
+                    label: 'Occasion',
+                    color: AppColors.amberGold,
+                    onTap: onAddOccasional,
+                  ),
+                  const SizedBox(height: 12),
+                  _miniAction(
+                    icon: Icons.task_alt_rounded,
+                    label: 'Task',
+                    color: AppColors.signalTeal,
+                    onTap: onAddTask,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ),
         FloatingActionButton(
           onPressed: onToggle,
           backgroundColor: AppColors.charcoal,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           child: AnimatedRotation(
             turns: isOpen ? 0.125 : 0,
             duration: const Duration(milliseconds: 300),
-            child: const Icon(
-              Icons.add_rounded,
-              //color: Colors.white,
-            ),
+            curve: Curves.easeOutCubic,
+            child: const Icon(Icons.add_rounded, color: Colors.white),
           ),
         ),
       ],
@@ -152,20 +181,50 @@ class _ExpandableFab extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.black87,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          child: Text(label,
-              style: const TextStyle(color: Colors.white, fontSize: 12)),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
-        const SizedBox(width: 8),
-        FloatingActionButton.small(
-          heroTag: label,
-          backgroundColor: color,
-          onPressed: onTap,
-          child: Icon(icon, color: Colors.white),
+        const SizedBox(width: 10),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(28),
+            onTap: onTap,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+          ),
         ),
       ],
     );
@@ -173,8 +232,9 @@ class _ExpandableFab extends StatelessWidget {
 }
 
 class _AppDrawer extends StatelessWidget {
+  final int selectedIndex;
   final ValueChanged<int> onSelect;
-  const _AppDrawer({required this.onSelect});
+  const _AppDrawer({required this.selectedIndex, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
@@ -185,57 +245,102 @@ class _AppDrawer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
-              color: AppColors.inkNavy,
-              child: const Column(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.inkNavy,
+                    AppColors.inkNavy.withOpacity(0.85),
+                  ],
+                ),
+              ),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.bolt_rounded,
-                      color: AppColors.signalTeal, size: 36),
-                  SizedBox(height: 10),
-                  Text('RoutineFix',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  Text('Stay disciplined, one tick at a time.',
-                      style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.signalTeal.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.bolt_rounded,
+                        color: AppColors.signalTeal, size: 28),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'RoutineFix',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Stay disciplined, one tick at a time.',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                 ],
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.home_rounded),
-              title: const Text('Home'),
-              onTap: () => onSelect(0),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                children: [
+                  _drawerTile(
+                    context,
+                    icon: Icons.home_rounded,
+                    label: 'Home',
+                    selected: selectedIndex == 0,
+                    onTap: () => onSelect(0),
+                  ),
+                  _drawerTile(
+                    context,
+                    icon: Icons.event_available_rounded,
+                    label: 'Occasional Reminders',
+                    selected: selectedIndex == 1,
+                    onTap: () => onSelect(1),
+                  ),
+                  _drawerTile(
+                    context,
+                    icon: Icons.insights_rounded,
+                    label: 'Reports',
+                    selected: selectedIndex == 2,
+                    onTap: () => onSelect(2),
+                  ),
+                ],
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.event_available_rounded),
-              title: const Text('Occasional Reminders'),
-              onTap: () => onSelect(1),
+            const Divider(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Obx(() => ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    leading: const Icon(Icons.dark_mode_rounded),
+                    title: const Text('Quick theme toggle'),
+                    subtitle: Text(themeCtrl.themeMode.value.label),
+                    onTap: () {
+                      final next =
+                          themeCtrl.themeMode.value == ThemeModeOption.light
+                              ? ThemeModeOption.dark
+                              : ThemeModeOption.light;
+                      themeCtrl.setMode(next);
+                    },
+                  )),
             ),
-            ListTile(
-              leading: const Icon(Icons.insights_rounded),
-              title: const Text('Reports'),
-              onTap: () => onSelect(2),
-            ),
-            const Divider(),
-            Obx(() => ListTile(
-                  leading: const Icon(Icons.dark_mode_rounded),
-                  title: const Text('Quick theme toggle'),
-                  subtitle: Text(themeCtrl.themeMode.value.label),
-                  onTap: () {
-                    final next =
-                        themeCtrl.themeMode.value == ThemeModeOption.light
-                            ? ThemeModeOption.dark
-                            : ThemeModeOption.light;
-                    themeCtrl.setMode(next);
-                  },
-                )),
-            ListTile(
-              leading: const Icon(Icons.settings_rounded),
-              title: const Text('Settings'),
-              onTap: () => onSelect(3),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: _drawerTile(
+                context,
+                icon: Icons.settings_rounded,
+                label: 'Settings',
+                selected: selectedIndex == 3,
+                onTap: () => onSelect(3),
+              ),
             ),
             const Spacer(),
             const Padding(
@@ -245,6 +350,40 @@ class _AppDrawer extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _drawerTile(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final color =
+        selected ? AppColors.signalTeal : Theme.of(context).iconTheme.color;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      decoration: BoxDecoration(
+        color: selected
+            ? AppColors.signalTeal.withOpacity(0.12)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        leading: Icon(icon, color: color),
+        title: Text(
+          label,
+          style: TextStyle(
+            color: selected ? AppColors.signalTeal : null,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+        onTap: onTap,
       ),
     );
   }

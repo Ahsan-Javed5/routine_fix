@@ -18,24 +18,24 @@ class AppColors {
   static const charcoal = Color(0xFF14171F);
 }
 
-Color priorityColor(Priority p) {
+Color priorityColor(TaskPriority p) {
   switch (p) {
-    case Priority.high:
+    case TaskPriority.high:
       return AppColors.emberCoral;
-    case Priority.medium:
+    case TaskPriority.medium:
       return AppColors.amberGold;
-    case Priority.low:
+    case TaskPriority.low:
       return AppColors.sageGreen;
   }
 }
 
-String priorityLabel(Priority p) {
+String priorityLabel(TaskPriority p) {
   switch (p) {
-    case Priority.high:
+    case TaskPriority.high:
       return 'High';
-    case Priority.medium:
+    case TaskPriority.medium:
       return 'Medium';
-    case Priority.low:
+    case TaskPriority.low:
       return 'Low';
   }
 }
@@ -89,7 +89,8 @@ class AppTheme {
         foregroundColor: Colors.white,
       ),
       textTheme: const TextTheme(
-        headlineSmall: TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.5),
+        headlineSmall:
+            TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.5),
         titleLarge: TextStyle(fontWeight: FontWeight.w700),
         titleMedium: TextStyle(fontWeight: FontWeight.w600),
         bodyMedium: TextStyle(height: 1.35),

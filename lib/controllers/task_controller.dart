@@ -33,21 +33,25 @@ class TaskController extends GetxController {
     final key = _key(date);
     final raw = task.occurrenceStatus[key];
     if (raw == null) return TaskStatus.pending;
-    return TaskStatus.values.firstWhere((e) => e.name == raw, orElse: () => TaskStatus.pending);
+    return TaskStatus.values
+        .firstWhere((e) => e.name == raw, orElse: () => TaskStatus.pending);
   }
 
   Future<void> addTask(TaskModel task) async {
     allTasks.add(task);
     await DbService.instance.saveTasks(allTasks);
     if (task.taskTime != null && task.taskDate != null) {
-      await NotificationService.instance.scheduleTaskReminders(task, task.taskDate!);
+      await NotificationService.instance
+          .scheduleTaskReminders(task, task.taskDate!);
     }
   }
 
   Future<void> toggleComplete(TaskModel task, DateTime date) async {
     final key = _key(date);
     final current = statusOn(task, date);
-    task.occurrenceStatus[key] = current == TaskStatus.done ? TaskStatus.pending.name : TaskStatus.done.name;
+    task.occurrenceStatus[key] = current == TaskStatus.done
+        ? TaskStatus.pending.name
+        : TaskStatus.done.name;
     await DbService.instance.saveTasks(allTasks);
     allTasks.refresh();
 
@@ -55,7 +59,8 @@ class TaskController extends GetxController {
     final today = DateTime.now();
     if (_key(date) == _key(today)) {
       final todays = tasksForSelectedDate;
-      final allDone = todays.every((t) => statusOn(t, today) == TaskStatus.done);
+      final allDone =
+          todays.every((t) => statusOn(t, today) == TaskStatus.done);
       if (allDone && todays.isNotEmpty) {
         await NotificationService.instance.cancelRemainingNudges(today);
       }
@@ -65,6 +70,17 @@ class TaskController extends GetxController {
   Future<void> deleteTask(String id) async {
     allTasks.removeWhere((t) => t.id == id);
     await DbService.instance.saveTasks(allTasks);
+  }
+
+  /// Soft delete task for selected date onwards
+  Future<void> archiveTask(TaskModel task, DateTime currentDate) async {
+    final updatedTask = task.copyWith(archivedAtDate: currentDate);
+    final index = allTasks.indexWhere((t) => t.id == task.id);
+    if (index != -1) {
+      allTasks[index] = updatedTask;
+      await DbService.instance.saveTasks(allTasks);
+      allTasks.refresh();
+    }
   }
 
   String newId() => const Uuid().v4();

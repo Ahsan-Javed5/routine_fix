@@ -27,7 +27,8 @@ class ReportController extends GetxController {
     }
 
     final occasional = reminderController.occasionalList.firstWhereOrNull(
-      (o) => RecurrenceService.dateKey(o.date) == RecurrenceService.dateKey(date),
+      (o) =>
+          RecurrenceService.dateKey(o.date) == RecurrenceService.dateKey(date),
     );
     String? occSummary;
     if (occasional != null) {
@@ -47,14 +48,17 @@ class ReportController extends GetxController {
   }
 
   PeriodReport periodReport(DateTime start, DateTime end) {
-    final Map<Priority, List<TaskStatus>> byPriority = {
-      Priority.high: [],
-      Priority.medium: [],
-      Priority.low: [],
+    final Map<TaskPriority, List<TaskStatus>> byPriority = {
+      TaskPriority.high: [],
+      TaskPriority.medium: [],
+      TaskPriority.low: [],
     };
 
-    for (DateTime d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
-      final tasks = taskController.allTasks.where((t) => RecurrenceService.occursOn(t, d));
+    for (DateTime d = start;
+        !d.isAfter(end);
+        d = d.add(const Duration(days: 1))) {
+      final tasks = taskController.allTasks
+          .where((t) => RecurrenceService.occursOn(t, d));
       for (final t in tasks) {
         byPriority[t.priority]!.add(taskController.statusOn(t, d));
       }
@@ -81,15 +85,16 @@ class ReportController extends GetxController {
     return PeriodReport(
       start: start,
       end: end,
-      high: buildStats(byPriority[Priority.high]!),
-      medium: buildStats(byPriority[Priority.medium]!),
-      low: buildStats(byPriority[Priority.low]!),
+      high: buildStats(byPriority[TaskPriority.high]!),
+      medium: buildStats(byPriority[TaskPriority.medium]!),
+      low: buildStats(byPriority[TaskPriority.low]!),
       occasionalItems: occItems,
     );
   }
 
   PeriodReport weeklyReport(DateTime anyDayInWeek) {
-    final start = anyDayInWeek.subtract(Duration(days: anyDayInWeek.weekday - 1));
+    final start =
+        anyDayInWeek.subtract(Duration(days: anyDayInWeek.weekday - 1));
     final end = start.add(const Duration(days: 6));
     return periodReport(start, end);
   }
