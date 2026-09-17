@@ -69,45 +69,11 @@ class HomeView extends GetView<TaskController> {
                     final status = controller.statusOn(task, date);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: Dismissible(
-                        key: Key('${task.id}_${date.toString()}'),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 24),
-                          decoration: BoxDecoration(
-                            color: AppColors.emberCoral,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(Icons.delete_outline_rounded,
-                              color: Colors.white),
-                        ),
-                        confirmDismiss: (_) async {
-                          return await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Stop Routine?'),
-                              content: const Text(
-                                  'This will delete the task for today & future days. Past history will remain saved.'),
-                              actions: [
-                                TextButton(
-                                    onPressed: () => Navigator.pop(ctx, false),
-                                    child: const Text('Cancel')),
-                                TextButton(
-                                    onPressed: () => Navigator.pop(ctx, true),
-                                    child: const Text('Delete',
-                                        style: TextStyle(color: Colors.red))),
-                              ],
-                            ),
-                          );
-                        },
-                        onDismissed: (_) => controller.archiveTask(task, date),
-                        child: _TaskCard(
-                            task: task,
-                            status: status,
-                            date: date,
-                            controller: controller),
-                      ),
+                      child: _TaskCard(
+                          task: task,
+                          status: status,
+                          date: date,
+                          controller: controller),
                     );
                   },
                   childCount: occasionalToday.length + tasks.length,

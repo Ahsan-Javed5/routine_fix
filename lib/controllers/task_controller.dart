@@ -64,7 +64,20 @@ class TaskController extends GetxController {
 
   /// Tasks that occur on any given date.
   List<TaskModel> tasksForDate(DateTime date) {
-    return allTasks.where((t) => RecurrenceService.occursOn(t, date)).toList()
+    return allTasks.where((t) {
+      if (t.archivedAtDate != null) {
+        final d = DateTime(date.year, date.month, date.day);
+        final archived = DateTime(
+          t.archivedAtDate!.year,
+          t.archivedAtDate!.month,
+          t.archivedAtDate!.day,
+        );
+
+        if (!d.isBefore(archived)) return false;
+      }
+
+      return RecurrenceService.occursOn(t, date);
+    }).toList()
       ..sort((a, b) => a.priority.index.compareTo(b.priority.index));
   }
 

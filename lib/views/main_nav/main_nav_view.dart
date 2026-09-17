@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/theme_controller.dart';
 import '../../utils/app_theme.dart';
+import '../ai_routine/ai_routine_view.dart';
 import '../home/home_view.dart';
 import '../home/widgets/ai_routine_sheet.dart';
 import '../occasional_reminder/occasional_view.dart';
@@ -22,6 +23,7 @@ class _MainNavViewState extends State<MainNavView> {
 
   final _pages = const [
     HomeView(),
+    AiRoutineView(),
     OccasionalView(),
     ReportsView(),
     SettingsView(),
@@ -29,9 +31,10 @@ class _MainNavViewState extends State<MainNavView> {
 
   final _titles = const [
     'RoutineFix',
+    'AI Routine',
     'Occasional Reminders',
     'Reports',
-    'Settings'
+    'Settings',
   ];
 
   void _toggleFab() => setState(() => _fabOpen = !_fabOpen);
@@ -71,10 +74,6 @@ class _MainNavViewState extends State<MainNavView> {
                 setState(() => _fabOpen = false);
                 showAddOccasionalDialog(context);
               },
-              onAddAi: () {
-                setState(() => _fabOpen = false);
-                showAiRoutineSheet(context);
-              },
             ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -85,6 +84,11 @@ class _MainNavViewState extends State<MainNavView> {
             icon: Icon(Icons.checklist_rounded),
             selectedIcon: Icon(Icons.checklist_rounded),
             label: 'Home',
+          ),
+          NavigationDestination(
+            icon: _AnimatedAiIcon(),
+            selectedIcon: _AnimatedAiIcon(active: true),
+            label: 'AI',
           ),
           NavigationDestination(
             icon: Icon(Icons.event_available_outlined),
@@ -112,14 +116,12 @@ class _ExpandableFab extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback onAddTask;
   final VoidCallback onAddOccasional;
-  final VoidCallback onAddAi;
 
   const _ExpandableFab({
     required this.isOpen,
     required this.onToggle,
     required this.onAddTask,
     required this.onAddOccasional,
-    required this.onAddAi,
   });
 
   @override
@@ -141,13 +143,6 @@ class _ExpandableFab extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _miniAction(
-                    icon: Icons.auto_awesome_rounded,
-                    label: 'AI Routine',
-                    color: AppColors.inkNavy,
-                    onTap: onAddAi,
-                  ),
-                  const SizedBox(height: 10),
                   _miniAction(
                     icon: Icons.event_note_rounded,
                     label: 'Occasion',
@@ -399,6 +394,54 @@ class _AppDrawer extends StatelessWidget {
         ),
         onTap: onTap,
       ),
+    );
+  }
+}
+
+class _AnimatedAiIcon extends StatefulWidget {
+  final bool active;
+
+  const _AnimatedAiIcon({this.active = false});
+
+  @override
+  State<_AnimatedAiIcon> createState() => _AnimatedAiIconState();
+}
+
+class _AnimatedAiIconState extends State<_AnimatedAiIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, child) {
+        return Transform.scale(
+          scale: 1.0 + (_controller.value * 0.08),
+          child: Icon(
+            Icons.auto_awesome_rounded,
+            color: widget.active
+                ? AppColors.signalTeal
+                : Theme.of(context).iconTheme.color,
+          ),
+        );
+      },
     );
   }
 }
