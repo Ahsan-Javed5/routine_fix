@@ -15,7 +15,8 @@ class ReportsView extends StatefulWidget {
   State<ReportsView> createState() => _ReportsViewState();
 }
 
-class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStateMixin {
+class _ReportsViewState extends State<ReportsView>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   _ChartKind _kind = _ChartKind.bar;
 
@@ -39,7 +40,11 @@ class _ReportsViewState extends State<ReportsView> with SingleTickerProviderStat
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white54,
             indicatorColor: AppColors.signalTeal,
-            tabs: const [Tab(text: 'Daily'), Tab(text: 'Weekly'), Tab(text: 'Monthly')],
+            tabs: const [
+              Tab(text: 'Daily'),
+              Tab(text: 'Weekly'),
+              Tab(text: 'Monthly')
+            ],
           ),
         ),
         Expanded(
@@ -75,9 +80,40 @@ class _DailyTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final report = controller.dailyReportFor(date);
+    final taskCtrl = Get.find<TaskController>();
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
       children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(Icons.local_fire_department_rounded,
+                    color: Color(0xFFFF8A3D), size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        taskCtrl.currentStreak == 1
+                            ? '1 day streak'
+                            : '${taskCtrl.currentStreak} day streak',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      Text('Best ever: ${taskCtrl.bestStreak} days',
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -94,23 +130,28 @@ class _DailyTab extends StatelessWidget {
                   children: [
                     Text(
                       '${report.completionPercent.toStringAsFixed(0)}%',
-                      style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 40, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(width: 8),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Text('completed', style: TextStyle(color: Colors.grey[600])),
+                      child: Text('completed',
+                          style: TextStyle(color: Colors.grey[600])),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    _statChip('Total', report.total.toString(), Colors.blueGrey),
+                    _statChip(
+                        'Total', report.total.toString(), Colors.blueGrey),
                     const SizedBox(width: 10),
-                    _statChip('Done', report.completed.toString(), AppColors.sageGreen),
+                    _statChip('Done', report.completed.toString(),
+                        AppColors.sageGreen),
                     const SizedBox(width: 10),
-                    _statChip('Missed', report.missed.toString(), AppColors.emberCoral),
+                    _statChip('Missed', report.missed.toString(),
+                        AppColors.emberCoral),
                   ],
                 ),
               ],
@@ -121,7 +162,8 @@ class _DailyTab extends StatelessWidget {
           const SizedBox(height: 16),
           Card(
             child: ListTile(
-              leading: const Icon(Icons.event_note_rounded, color: AppColors.amberGold),
+              leading: const Icon(Icons.event_note_rounded,
+                  color: AppColors.amberGold),
               title: const Text('Occasional task today'),
               subtitle: Text(report.occasionalSummary!),
             ),
@@ -135,10 +177,14 @@ class _DailyTab extends StatelessWidget {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+            color: color.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12)),
         child: Column(
           children: [
-            Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: color)),
+            Text(value,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 18, color: color)),
             Text(label, style: TextStyle(fontSize: 11, color: color)),
           ],
         ),
@@ -162,16 +208,50 @@ class _PeriodTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reportCtrl = Get.find<ReportController>();
+    final days = <DateTime>[];
+    for (DateTime d = report.start;
+        !d.isAfter(report.end);
+        d = d.add(const Duration(days: 1))) {
+      days.add(d);
+    }
+    DateTime? bestDay;
+    DateTime? toughestDay;
+    double bestPct = -1;
+    double worstPct = 101;
+    for (final d in days) {
+      final r = reportCtrl.dailyReportFor(d);
+      if (r.total == 0) continue;
+      if (r.completionPercent > bestPct) {
+        bestPct = r.completionPercent;
+        bestDay = d;
+      }
+      if (r.completionPercent < worstPct) {
+        worstPct = r.completionPercent;
+        toughestDay = d;
+      }
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
       children: [
-        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 14),
         SegmentedButton<_ChartKind>(
           segments: const [
-            ButtonSegment(value: _ChartKind.bar, icon: Icon(Icons.bar_chart_rounded), label: Text('Bar')),
-            ButtonSegment(value: _ChartKind.pie, icon: Icon(Icons.pie_chart_rounded), label: Text('Pie')),
-            ButtonSegment(value: _ChartKind.line, icon: Icon(Icons.show_chart_rounded), label: Text('Trend')),
+            ButtonSegment(
+                value: _ChartKind.bar,
+                icon: Icon(Icons.bar_chart_rounded),
+                label: Text('Bar')),
+            ButtonSegment(
+                value: _ChartKind.pie,
+                icon: Icon(Icons.pie_chart_rounded),
+                label: Text('Pie')),
+            ButtonSegment(
+                value: _ChartKind.line,
+                icon: Icon(Icons.show_chart_rounded),
+                label: Text('Trend')),
           ],
           selected: {kind},
           onSelectionChanged: (s) => onKindChanged(s.first),
@@ -186,24 +266,98 @@ class _PeriodTab extends StatelessWidget {
             ),
           ),
         ),
+        if (bestDay != null || toughestDay != null) ...[
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              if (bestDay != null)
+                Expanded(
+                  child: _dayHighlightCard(
+                    icon: Icons.emoji_events_rounded,
+                    label: 'Best day',
+                    date: bestDay,
+                    percent: bestPct,
+                    color: AppColors.sageGreen,
+                  ),
+                ),
+              if (bestDay != null && toughestDay != null)
+                const SizedBox(width: 10),
+              if (toughestDay != null)
+                Expanded(
+                  child: _dayHighlightCard(
+                    icon: Icons.trending_down_rounded,
+                    label: 'Toughest day',
+                    date: toughestDay,
+                    percent: worstPct,
+                    color: AppColors.emberCoral,
+                  ),
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         _priorityRow('High priority', report.high, AppColors.emberCoral),
         _priorityRow('Medium priority', report.medium, AppColors.amberGold),
         _priorityRow('Low priority', report.low, AppColors.sageGreen),
         const SizedBox(height: 16),
         if (report.occasionalItems.isNotEmpty) ...[
-          const Text('Occasional Tasks', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text('Occasional Tasks',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           ...report.occasionalItems.map((o) => Card(
                 child: ListTile(
                   dense: true,
-                  leading: const Icon(Icons.event_note_rounded, size: 20, color: AppColors.amberGold),
+                  leading: const Icon(Icons.event_note_rounded,
+                      size: 20, color: AppColors.amberGold),
                   title: Text(o['title']),
-                  subtitle: Text('${o['date'].toString().split(' ')[0]} • ${o['status']}'),
+                  subtitle: Text(
+                      '${o['date'].toString().split(' ')[0]} • ${o['status']}'),
                 ),
               )),
         ],
       ],
+    );
+  }
+
+  Widget _dayHighlightCard({
+    required IconData icon,
+    required String label,
+    required DateTime? date,
+    required double percent,
+    required Color color,
+  }) {
+    return Card(
+      color: color.withOpacity(0.08),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: color.withOpacity(0.25)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: color),
+                const SizedBox(width: 6),
+                Text(label,
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: color,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(date != null ? '${date.day}/${date.month}' : '-',
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            Text('${percent.toStringAsFixed(0)}% completed',
+                style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+          ],
+        ),
+      ),
     );
   }
 
@@ -225,9 +379,12 @@ class _PeriodTab extends StatelessWidget {
         gridData: const FlGridData(show: false),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -235,7 +392,8 @@ class _PeriodTab extends StatelessWidget {
                 const labels = ['High', 'Medium', 'Low'];
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(labels[value.toInt()], style: const TextStyle(fontSize: 11)),
+                  child: Text(labels[value.toInt()],
+                      style: const TextStyle(fontSize: 11)),
                 );
               },
             ),
@@ -252,13 +410,18 @@ class _PeriodTab extends StatelessWidget {
 
   BarChartGroupData _bar(int x, double value, Color color) {
     return BarChartGroupData(x: x, barRods: [
-      BarChartRodData(toY: value, width: 26, color: color, borderRadius: BorderRadius.circular(6)),
+      BarChartRodData(
+          toY: value,
+          width: 26,
+          color: color,
+          borderRadius: BorderRadius.circular(6)),
     ]);
   }
 
   Widget _pieChart() {
     final total = report.high.total + report.medium.total + report.low.total;
-    final completed = report.high.completed + report.medium.completed + report.low.completed;
+    final completed =
+        report.high.completed + report.medium.completed + report.low.completed;
     final missed = total - completed;
     if (total == 0) {
       return const Center(child: Text('No data for this period yet'));
@@ -276,14 +439,20 @@ class _PeriodTab extends StatelessWidget {
                   color: AppColors.signalTeal,
                   title: '$completed',
                   radius: 50,
-                  titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  titleStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12),
                 ),
                 PieChartSectionData(
                   value: missed.toDouble(),
                   color: AppColors.emberCoral.withOpacity(0.7),
                   title: '$missed',
                   radius: 50,
-                  titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  titleStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12),
                 ),
               ],
             ),
@@ -304,7 +473,10 @@ class _PeriodTab extends StatelessWidget {
   Widget _legendDot(String label, Color color) {
     return Row(
       children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 6),
         Text(label, style: const TextStyle(fontSize: 12)),
       ],
@@ -315,7 +487,9 @@ class _PeriodTab extends StatelessWidget {
     final taskCtrl = Get.find<TaskController>();
     final reportCtrl = Get.find<ReportController>();
     final days = <DateTime>[];
-    for (DateTime d = report.start; !d.isAfter(report.end); d = d.add(const Duration(days: 1))) {
+    for (DateTime d = report.start;
+        !d.isAfter(report.end);
+        d = d.add(const Duration(days: 1))) {
       days.add(d);
     }
     final spots = <FlSpot>[];
@@ -323,7 +497,8 @@ class _PeriodTab extends StatelessWidget {
       final daily = reportCtrl.dailyReportFor(days[i]);
       spots.add(FlSpot(i.toDouble(), daily.completionPercent));
     }
-    if (spots.isEmpty) return const Center(child: Text('No data for this period yet'));
+    if (spots.isEmpty)
+      return const Center(child: Text('No data for this period yet'));
 
     return LineChart(
       LineChartData(
@@ -332,11 +507,17 @@ class _PeriodTab extends StatelessWidget {
         gridData: const FlGridData(show: true, drawVerticalLine: false),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           leftTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: true, interval: 25, reservedSize: 32,
-                getTitlesWidget: (v, m) => Text('${v.toInt()}', style: const TextStyle(fontSize: 10))),
+            sideTitles: SideTitles(
+                showTitles: true,
+                interval: 25,
+                reservedSize: 32,
+                getTitlesWidget: (v, m) =>
+                    Text('${v.toInt()}', style: const TextStyle(fontSize: 10))),
           ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
@@ -347,7 +528,8 @@ class _PeriodTab extends StatelessWidget {
                 if (i < 0 || i >= days.length) return const Text('');
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text('${days[i].day}', style: const TextStyle(fontSize: 10)),
+                  child: Text('${days[i].day}',
+                      style: const TextStyle(fontSize: 10)),
                 );
               },
             ),
@@ -360,7 +542,8 @@ class _PeriodTab extends StatelessWidget {
             color: AppColors.signalTeal,
             barWidth: 3,
             dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(show: true, color: AppColors.signalTeal.withOpacity(0.15)),
+            belowBarData: BarAreaData(
+                show: true, color: AppColors.signalTeal.withOpacity(0.15)),
           ),
         ],
       ),
@@ -372,11 +555,16 @@ class _PeriodTab extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           const SizedBox(width: 8),
           Expanded(child: Text(label, style: const TextStyle(fontSize: 13))),
-          Text('${stats.completed}/${stats.total} • ${stats.completedPercent.toStringAsFixed(0)}%',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
+          Text(
+              '${stats.completed}/${stats.total} • ${stats.completedPercent.toStringAsFixed(0)}%',
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w600, color: color)),
         ],
       ),
     );

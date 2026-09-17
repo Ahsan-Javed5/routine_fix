@@ -6,12 +6,16 @@ class DisciplineRingHero extends StatelessWidget {
   final double percent;
   final int done;
   final int total;
+  final int currentStreak;
+  final int bestStreak;
 
   const DisciplineRingHero({
     super.key,
     required this.percent,
     required this.done,
     required this.total,
+    this.currentStreak = 0,
+    this.bestStreak = 0,
   });
 
   @override
@@ -27,53 +31,109 @@ class DisciplineRingHero extends StatelessWidget {
           bottomRight: Radius.circular(28),
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          SizedBox(
-            width: 84,
-            height: 84,
-            child: CustomPaint(
-              painter: _RingPainter(percent: percent),
-              child: Center(
-                child: Text(
-                  '${(percent * 100).round()}%',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18),
+          Row(
+            children: [
+              SizedBox(
+                width: 84,
+                height: 84,
+                child: CustomPaint(
+                  painter: _RingPainter(percent: percent),
+                  child: Center(
+                    child: Text(
+                      '${(percent * 100).round()}%',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Discipline Ring',
-                    style: TextStyle(color: Colors.white70, fontSize: 12)),
-                const SizedBox(height: 4),
-                Text(
-                  total == 0
-                      ? 'No tasks planned'
-                      : '$done of $total tasks done',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 17),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Discipline Ring',
+                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Text(
+                      total == 0
+                          ? 'No tasks planned'
+                          : '$done of $total tasks done',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 17),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      percent >= 1 && total > 0
+                          ? 'Perfect day — keep the streak alive!'
+                          : total == 0
+                              ? 'Add a task to get started.'
+                              : 'Keep going, you\'ve got this.',
+                      style:
+                          const TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  percent >= 1 && total > 0
-                      ? 'Perfect day — keep the streak alive!'
-                      : total == 0
-                          ? 'Add a task to get started.'
-                          : 'Keep going, you\'ve got this.',
-                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            ],
+          ),
+          if (currentStreak > 0 || bestStreak > 0) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _streakPill(
+                  icon: Icons.local_fire_department_rounded,
+                  label: currentStreak == 1
+                      ? '1 day streak'
+                      : '$currentStreak day streak',
+                  color: const Color(0xFFFF8A3D),
+                  emphasized: currentStreak > 0,
+                ),
+                const SizedBox(width: 10),
+                _streakPill(
+                  icon: Icons.emoji_events_rounded,
+                  label: 'Best: $bestStreak',
+                  color: AppColors.amberGold,
+                  emphasized: false,
                 ),
               ],
             ),
-          ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _streakPill({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool emphasized,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: emphasized
+            ? color.withOpacity(0.18)
+            : Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: emphasized ? color : Colors.white60),
+          const SizedBox(width: 5),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: emphasized ? Colors.white : Colors.white60)),
         ],
       ),
     );

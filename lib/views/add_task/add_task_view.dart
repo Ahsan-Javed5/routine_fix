@@ -120,13 +120,6 @@ class AddTaskView extends GetView<TaskController> {
                 );
               }),
               const SizedBox(height: 4),
-              Obx(() => CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('One-time task (specific day only)'),
-                    subtitle: const Text('Requires a task date below'),
-                    value: isOneTime.value,
-                    onChanged: (v) => isOneTime.value = v ?? false,
-                  )),
             ],
           ),
           _sectionCard(
@@ -158,6 +151,9 @@ class AddTaskView extends GetView<TaskController> {
             icon: Icons.flag_rounded,
             children: [
               Obx(() => SegmentedButton<TaskPriority>(
+                    showSelectedIcon: false,
+                    style: SegmentedButton.styleFrom(
+                        visualDensity: VisualDensity.standard),
                     segments: TaskPriority.values.map((p) {
                       return ButtonSegment(
                         value: p,
@@ -168,6 +164,7 @@ class AddTaskView extends GetView<TaskController> {
                     }).toList(),
                     selected: {priority.value},
                     onSelectionChanged: (s) => priority.value = s.first,
+                    expandedInsets: EdgeInsets.zero,
                   )),
             ],
           ),

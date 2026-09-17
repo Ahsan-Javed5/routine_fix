@@ -20,10 +20,11 @@ class TaskController extends GetxController {
   }
 
   /// Tasks that occur on the currently selected date.
-  List<TaskModel> get tasksForSelectedDate {
-    return allTasks
-        .where((t) => RecurrenceService.occursOn(t, selectedDate.value))
-        .toList()
+  List<TaskModel> get tasksForSelectedDate => tasksForDate(selectedDate.value);
+
+  /// Tasks that occur on any given date.
+  List<TaskModel> tasksForDate(DateTime date) {
+    return allTasks.where((t) => RecurrenceService.occursOn(t, date)).toList()
       ..sort((a, b) => a.priority.index.compareTo(b.priority.index));
   }
 
@@ -83,5 +84,72 @@ class TaskController extends GetxController {
     }
   }
 
+  /// Replaces all tasks (used when restoring a backup).
+  Future<void> restoreTasks(List<TaskModel> tasks) async {
+    allTasks.value = tasks;
+    await DbService.instance.saveTasks(allTasks);
+  }
+
   String newId() => const Uuid().v4();
+
+  // ---------------- Streak tracking ----------------
+
+  DateTime _dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  DateTime get _earliestDay {
+    if (allTasks.isEmpty) return _dayOnly(DateTime.now());
+    final earliest = allTasks
+        .map((t) => t.createdAt)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    return _dayOnly(earliest);
+  }
+
+  /// A day only "breaks" the streak if tasks were planned for it and not
+  /// all completed. Days with nothing planned are skipped, not counted.
+  bool _isPerfectDay(DateTime day) {
+    final dayTasks = tasksForDate(day);
+    if (dayTasks.isEmpty) return true; // neutral, doesn't break the streak
+    return dayTasks.every((t) => statusOn(t, day) == TaskStatus.done);
+  }
+
+  bool _hasTasks(DateTime day) => tasksForDate(day).isNotEmpty;
+
+  /// Consecutive days up to today (inclusive) where every planned task
+  /// was completed. Days with nothing planned don't break the chain.
+  int get currentStreak {
+    final earliest = _earliestDay;
+    final today = _dayOnly(DateTime.now());
+    int streak = 0;
+    for (int i = 0;; i++) {
+      final day = today.subtract(Duration(days: i));
+      if (day.isBefore(earliest)) break;
+      if (!_hasTasks(day)) continue;
+      if (_isPerfectDay(day)) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  /// Longest streak ever achieved.
+  int get bestStreak {
+    final earliest = _earliestDay;
+    final today = _dayOnly(DateTime.now());
+    int best = 0;
+    int running = 0;
+    for (DateTime day = earliest;
+        !day.isAfter(today);
+        day = day.add(const Duration(days: 1))) {
+      if (!_hasTasks(day)) continue;
+      if (_isPerfectDay(day)) {
+        running++;
+        if (running > best) best = running;
+      } else {
+        running = 0;
+      }
+    }
+    return best;
+  }
 }

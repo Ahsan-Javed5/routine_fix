@@ -42,7 +42,11 @@ class HomeView extends GetView<TaskController> {
         slivers: [
           SliverToBoxAdapter(
               child: DisciplineRingHero(
-                  percent: percent, done: doneCount, total: totalCount)),
+                  percent: percent,
+                  done: doneCount,
+                  total: totalCount,
+                  currentStreak: controller.currentStreak,
+                  bestStreak: controller.bestStreak)),
           SliverToBoxAdapter(child: DateStrip(controller: controller)),
           if (isEmpty)
             SliverFillRemaining(
@@ -126,6 +130,9 @@ class _OccasionalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final done = item.isConfirmed == true;
     final missed = item.isConfirmed == false;
+    final today = DateTime.now();
+    final isFuture = DateTime(item.date.year, item.date.month, item.date.day)
+        .isAfter(DateTime(today.year, today.month, today.day));
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
@@ -150,7 +157,7 @@ class _OccasionalCard extends StatelessWidget {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => controller.confirmDone(item, !done),
+          onTap: isFuture ? null : () => controller.confirmDone(item, !done),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
@@ -216,7 +223,9 @@ class _OccasionalCard extends StatelessWidget {
                   value: done,
                   shape: const CircleBorder(),
                   activeColor: AppColors.amberGold,
-                  onChanged: (_) => controller.confirmDone(item, !done),
+                  onChanged: isFuture
+                      ? null
+                      : (_) => controller.confirmDone(item, !done),
                 ),
               ],
             ),
@@ -262,6 +271,9 @@ class _TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final done = status == TaskStatus.done;
+    final today = DateTime.now();
+    final isFuture = DateTime(date.year, date.month, date.day)
+        .isAfter(DateTime(today.year, today.month, today.day));
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
@@ -288,7 +300,7 @@ class _TaskCard extends StatelessWidget {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => controller.toggleComplete(task, date),
+          onTap: isFuture ? null : () => controller.toggleComplete(task, date),
           onLongPress: () => _confirmDelete(context, task, date, controller),
           child: Padding(
             padding: const EdgeInsets.all(14),
@@ -357,7 +369,9 @@ class _TaskCard extends StatelessWidget {
                     value: done,
                     shape: const CircleBorder(),
                     activeColor: priorityColor(task.priority),
-                    onChanged: (_) => controller.toggleComplete(task, date),
+                    onChanged: isFuture
+                        ? null
+                        : (_) => controller.toggleComplete(task, date),
                   ),
                 ),
               ],

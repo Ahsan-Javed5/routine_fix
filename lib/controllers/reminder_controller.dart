@@ -24,6 +24,11 @@ class ReminderController extends GetxController {
         .scheduleOccasionalReminder(item.id, item.title, item.date, item.time);
   }
 
+  Future<void> restoreItems(List<OccasionalModel> items) async {
+    occasionalList.value = items;
+    await DbService.instance.saveOccasional(occasionalList);
+  }
+
   Future<void> confirmDone(OccasionalModel item, bool done) async {
     item.isConfirmed = done;
     item.confirmedAt = DateTime.now();
@@ -40,6 +45,8 @@ class ReminderController extends GetxController {
 
   /// Items awaiting user confirmation (date has passed but not yet confirmed).
   List<OccasionalModel> get pendingConfirmations => occasionalList
-      .where((e) => e.isConfirmed == null && e.date.isBefore(DateTime.now().add(const Duration(days: 1))))
+      .where((e) =>
+          e.isConfirmed == null &&
+          e.date.isBefore(DateTime.now().add(const Duration(days: 1))))
       .toList();
 }
