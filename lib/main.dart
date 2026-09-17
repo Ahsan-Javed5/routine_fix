@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'app/routes/app_pages.dart';
@@ -14,6 +15,7 @@ Future<void> main() async {
   await GetStorage.init();
   await DbService.instance.init();
   await NotificationService.instance.init();
+  await dotenv.load(fileName: ".env");
 
   // Schedule today's nightly nudges once at app start.
   await NotificationService.instance.scheduleNightlyNudges(DateTime.now());
@@ -27,6 +29,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeController = Get.put(ThemeController(), permanent: true);
+
     return Obx(() => GetMaterialApp(
           title: 'RoutineFix',
           debugShowCheckedModeBanner: false,

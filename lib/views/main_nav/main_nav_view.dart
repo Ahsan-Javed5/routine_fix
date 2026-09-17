@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/theme_controller.dart';
 import '../../utils/app_theme.dart';
 import '../home/home_view.dart';
+import '../home/widgets/ai_routine_sheet.dart';
 import '../occasional_reminder/occasional_view.dart';
 import '../reports/reports_view.dart';
 import '../settings/settings_view.dart';
@@ -70,6 +71,10 @@ class _MainNavViewState extends State<MainNavView> {
                 setState(() => _fabOpen = false);
                 showAddOccasionalDialog(context);
               },
+              onAddAi: () {
+                setState(() => _fabOpen = false);
+                showAiRoutineSheet(context);
+              },
             ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -107,12 +112,14 @@ class _ExpandableFab extends StatelessWidget {
   final VoidCallback onToggle;
   final VoidCallback onAddTask;
   final VoidCallback onAddOccasional;
+  final VoidCallback onAddAi;
 
   const _ExpandableFab({
     required this.isOpen,
     required this.onToggle,
     required this.onAddTask,
     required this.onAddOccasional,
+    required this.onAddAi,
   });
 
   @override
@@ -134,6 +141,13 @@ class _ExpandableFab extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  _miniAction(
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'AI Routine',
+                    color: AppColors.inkNavy,
+                    onTap: onAddAi,
+                  ),
+                  const SizedBox(height: 10),
                   _miniAction(
                     icon: Icons.event_note_rounded,
                     label: 'Occasion',

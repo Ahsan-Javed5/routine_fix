@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task_model.dart';
+import '../services/ai_service.dart';
 import '../services/db_service.dart';
 import '../services/notification_service.dart';
 import '../services/recurrence_service.dart';
@@ -8,11 +10,49 @@ import '../services/recurrence_service.dart';
 class TaskController extends GetxController {
   final RxList<TaskModel> allTasks = <TaskModel>[].obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
+  static const int dailyAiLimit = 5;
+  final _storage = GetStorage();
 
   @override
   void onInit() {
     super.onInit();
     loadTasks();
+  }
+
+  String _aiUsageKey() {
+    final d = DateTime.now();
+    return 'ai_usage_${d.year}-${d.month}-${d.day}';
+  }
+
+  int get aiUsesToday => _storage.read(_aiUsageKey()) ?? 0;
+
+  bool get canUseAiToday => aiUsesToday < dailyAiLimit;
+
+  void _incrementAiUsage() {
+    _storage.write(_aiUsageKey(), aiUsesToday + 1);
+  }
+
+  Future<List<Map<String, dynamic>>> generateAiSuggestions(String goal) async {
+    if (!canUseAiToday) {
+      throw Exception(
+          'Daily AI limit reached ($dailyAiLimit/day). Try again tomorrow.');
+    }
+    final suggestions = await AiService.instance.generateRoutine(goal);
+    _incrementAiUsage();
+    return suggestions;
+  }
+
+  Future<void> addAiTasks(List<Map<String, dynamic>> picked) async {
+    for (final t in picked) {
+      final task = TaskModel(
+        id: newId(),
+        title: t['title'],
+        description: t['description'] ?? '',
+        taskTime: t['time'],
+        repetition: Repetition.daily,
+      );
+      await addTask(task);
+    }
   }
 
   Future<void> loadTasks() async {
