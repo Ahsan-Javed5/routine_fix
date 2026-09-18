@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:routine_fix/views/main_nav/widgets/animated_ai_icon.dart';
 import '../../controllers/theme_controller.dart';
 import '../../utils/app_theme.dart';
 import '../ai_routine/ai_routine_view.dart';
@@ -85,8 +86,8 @@ class _MainNavViewState extends State<MainNavView> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: _AnimatedAiIcon(),
-            selectedIcon: _AnimatedAiIcon(active: true),
+            icon: AnimatedAiIcon(),
+            selectedIcon: AnimatedAiIcon(active: true),
             label: 'AI',
           ),
           NavigationDestination(
@@ -273,8 +274,8 @@ class _AppDrawer extends StatelessWidget {
                       color: AppColors.signalTeal.withOpacity(0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.bolt_rounded,
-                        color: AppColors.signalTeal, size: 28),
+                    child: const Icon(Icons.auto_awesome_rounded,
+                        color: Colors.white, size: 28),
                   ),
                   const SizedBox(height: 14),
                   const Text(
@@ -306,17 +307,24 @@ class _AppDrawer extends StatelessWidget {
                   ),
                   _drawerTile(
                     context,
-                    icon: Icons.event_available_rounded,
-                    label: 'Occasional Reminders',
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'AI Routine',
                     selected: selectedIndex == 1,
                     onTap: () => onSelect(1),
                   ),
                   _drawerTile(
                     context,
-                    icon: Icons.insights_rounded,
-                    label: 'Reports',
+                    icon: Icons.event_available_rounded,
+                    label: 'Occasional Reminders',
                     selected: selectedIndex == 2,
                     onTap: () => onSelect(2),
+                  ),
+                  _drawerTile(
+                    context,
+                    icon: Icons.insights_rounded,
+                    label: 'Reports',
+                    selected: selectedIndex == 3,
+                    onTap: () => onSelect(3),
                   ),
                 ],
               ),
@@ -346,8 +354,8 @@ class _AppDrawer extends StatelessWidget {
                 context,
                 icon: Icons.settings_rounded,
                 label: 'Settings',
-                selected: selectedIndex == 3,
-                onTap: () => onSelect(3),
+                selected: selectedIndex == 4,
+                onTap: () => onSelect(4),
               ),
             ),
             const Spacer(),
@@ -393,54 +401,6 @@ class _AppDrawer extends StatelessWidget {
         ),
         onTap: onTap,
       ),
-    );
-  }
-}
-
-class _AnimatedAiIcon extends StatefulWidget {
-  final bool active;
-
-  const _AnimatedAiIcon({this.active = false});
-
-  @override
-  State<_AnimatedAiIcon> createState() => _AnimatedAiIconState();
-}
-
-class _AnimatedAiIconState extends State<_AnimatedAiIcon>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (_, child) {
-        return Transform.scale(
-          scale: 1.0 + (_controller.value * 0.08),
-          child: Icon(
-            Icons.auto_awesome_rounded,
-            color: widget.active
-                ? AppColors.signalTeal
-                : Theme.of(context).iconTheme.color,
-          ),
-        );
-      },
     );
   }
 }
