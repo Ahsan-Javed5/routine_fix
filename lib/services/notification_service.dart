@@ -17,7 +17,8 @@ class NotificationService {
         await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(currentTimeZone.identifier));
 
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidInit =
+        AndroidInitializationSettings('@mipmap/ic_notification');
     const iosInit = DarwinInitializationSettings();
     const initSettings =
         InitializationSettings(android: androidInit, iOS: iosInit);
@@ -117,7 +118,7 @@ class NotificationService {
             tz.local, today.year, today.month, today.day, hour, minute);
         if (time.isBefore(tz.TZDateTime.now(tz.local))) continue;
         await _plugin.zonedSchedule(
-          _idFor('nudge_$today', '${hour}_$minute'),
+          _idFor('nudge_$today', ''),
           'Pending Tasks Reminder',
           'You still have pending tasks today. Finish up to keep your streak!',
           time,

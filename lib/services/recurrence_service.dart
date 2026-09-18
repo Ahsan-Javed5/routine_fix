@@ -18,7 +18,7 @@ class RecurrenceService {
         task.archivedAtDate!.month,
         task.archivedAtDate!.day,
       );
-      if (d.isAfter(archived)) return false;
+      if (!d.isBefore(archived)) return false;
     }
 
     // 3. One-Time / Non-repeating task logic
