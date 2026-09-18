@@ -7,6 +7,7 @@ import '../../controllers/reminder_controller.dart';
 import '../../models/task_model.dart';
 import '../../models/occasional_model.dart';
 import '../../utils/app_theme.dart';
+import '../add_task/add_task_view.dart';
 
 class HomeView extends GetView<TaskController> {
   const HomeView({super.key});
@@ -142,21 +143,14 @@ class _OccasionalCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15.5,
-                                decoration:
-                                    done ? TextDecoration.lineThrough : null,
-                                color: done ? Colors.grey : null,
-                              ),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        item.title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15.5,
+                          decoration: done ? TextDecoration.lineThrough : null,
+                          color: done ? Colors.grey : null,
+                        ),
                       ),
                       if (item.description.isNotEmpty) ...[
                         const SizedBox(height: 3),
@@ -267,7 +261,7 @@ class _TaskCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: isFuture ? null : () => controller.toggleComplete(task, date),
-          onLongPress: () => _confirmDelete(context, task, date, controller),
+          onLongPress: () => _showTaskActions(context, task, date, controller),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
@@ -368,11 +362,59 @@ class _TaskCard extends StatelessWidget {
   }
 }
 
+void _showTaskActions(BuildContext context, TaskModel task, DateTime date,
+    TaskController controller) {
+  Get.bottomSheet(
+    Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.edit_rounded, color: AppColors.signalTeal),
+              title: const Text('Edit task'),
+              onTap: () {
+                Get.back();
+                Get.to(() => AddTaskView(existingTask: task));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded,
+                  color: AppColors.emberCoral),
+              title: const Text('Delete task'),
+              onTap: () async {
+                Get.back();
+                await _confirmDelete(context, task, date, controller);
+              },
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 Future<void> _confirmDelete(BuildContext context, TaskModel task, DateTime date,
     TaskController controller) async {
   final confirm = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Text('Stop Routine?'),
       content: const Text(
           'This will delete the task for today & future days. Past history will remain saved.'),
@@ -380,9 +422,11 @@ Future<void> _confirmDelete(BuildContext context, TaskModel task, DateTime date,
         TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel')),
-        TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: AppColors.emberCoral),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: const Text('Delete'),
+        ),
       ],
     ),
   );

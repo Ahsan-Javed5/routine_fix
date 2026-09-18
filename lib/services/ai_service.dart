@@ -1,17 +1,18 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class AiService {
   static final AiService instance = AiService._internal();
   AiService._internal();
 
-  static const String _apiKey =
-      String.fromEnvironment('GEMINI_KEY', defaultValue: 'YOUR_API_KEY_HERE');
+  static final String _apiKey = String.fromEnvironment('GEMINI_KEY',
+      defaultValue: dotenv.env['API_KEY'].toString());
 
   Future<List<Map<String, dynamic>>> generateRoutine(String goal,
       {List<String>? avoidTitles}) async {
     final model = GenerativeModel(
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.5-flash-lite',
       apiKey: _apiKey,
       generationConfig: GenerationConfig(responseMimeType: 'application/json'),
     );

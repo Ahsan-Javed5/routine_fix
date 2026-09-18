@@ -13,7 +13,7 @@ class TaskController extends GetxController {
   final RxList<TaskModel> allTasks = <TaskModel>[].obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
 
-  static const int dailyAiLimit = 2;
+  static const int dailyAiLimit = 10;
   final _storage = GetStorage();
 
   final RxInt _aiUsesToday = 0.obs;
@@ -254,6 +254,19 @@ class TaskController extends GetxController {
         .toList()
         .reversed
         .toList();
+  }
+
+  Future<void> updateTask(TaskModel updated) async {
+    final index = allTasks.indexWhere((t) => t.id == updated.id);
+    if (index != -1) {
+      allTasks[index] = updated;
+      await DbService.instance.saveTasks(allTasks);
+      allTasks.refresh();
+      if (updated.taskTime != null && updated.taskDate != null) {
+        await NotificationService.instance
+            .scheduleTaskReminders(updated, updated.taskDate!);
+      }
+    }
   }
 
   void _logAiHistory(String goal, List<String> titles, int addedCount) {

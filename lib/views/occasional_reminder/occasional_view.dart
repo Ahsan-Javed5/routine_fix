@@ -92,8 +92,8 @@ class _ReminderCard extends StatelessWidget {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => showAddOccasionalDialog(context, existing: item),
-          onLongPress: () => _confirmDelete(context, item, controller),
+          onTap: () => _showReminderActions(context, item, controller),
+          onLongPress: () => _showReminderActions(context, item, controller),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
@@ -146,9 +146,9 @@ class _ReminderCard extends StatelessWidget {
                       Expanded(
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.sageGreen,
+                            foregroundColor: AppColors.signalTeal,
                             side: BorderSide(
-                                color: AppColors.sageGreen.withOpacity(0.5)),
+                                color: AppColors.signalTeal.withOpacity(0.5)),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
                           ),
@@ -182,6 +182,53 @@ class _ReminderCard extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showReminderActions(
+    BuildContext context, OccasionalModel item, ReminderController controller) {
+  Get.bottomSheet(
+    Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.edit_rounded, color: AppColors.signalTeal),
+              title: const Text('Edit reminder'),
+              onTap: () {
+                Get.back();
+                showAddOccasionalDialog(context, existing: item);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded,
+                  color: AppColors.emberCoral),
+              title: const Text('Delete reminder'),
+              onTap: () async {
+                Get.back();
+                await _confirmDelete(context, item, controller);
+              },
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 Future<void> _confirmDelete(BuildContext context, OccasionalModel item,
@@ -313,14 +360,14 @@ void showAddOccasionalDialog(BuildContext context,
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.amberGold.withOpacity(0.16),
+                    color: AppColors.signalTeal.withOpacity(0.16),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                       isEdit
                           ? Icons.edit_calendar_rounded
                           : Icons.event_note_rounded,
-                      color: AppColors.amberGold,
+                      color: AppColors.signalTeal,
                       size: 20),
                 ),
                 const SizedBox(width: 12),

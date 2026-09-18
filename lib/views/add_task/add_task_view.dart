@@ -5,25 +5,36 @@ import '../../models/task_model.dart';
 import '../../utils/app_theme.dart';
 
 class AddTaskView extends GetView<TaskController> {
-  const AddTaskView({super.key});
+  const AddTaskView({super.key, this.existingTask});
+  final TaskModel? existingTask;
 
   @override
   Widget build(BuildContext context) {
-    final titleCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final Rx<DateTime?> pickedDate = Rx<DateTime?>(null);
-    final Rx<TimeOfDay?> pickedTime = Rx<TimeOfDay?>(null);
-    final Rx<Repetition> repetition = Repetition.none.obs;
-    final Rx<TaskPriority> priority = TaskPriority.medium.obs;
+    final titleCtrl = TextEditingController(text: existingTask?.title ?? '');
+    final descCtrl =
+        TextEditingController(text: existingTask?.description ?? '');
+    final Rx<DateTime?> pickedDate = Rx<DateTime?>(existingTask?.taskDate);
+    final Rx<TimeOfDay?> pickedTime = Rx<TimeOfDay?>(
+        existingTask?.taskTime != null
+            ? TimeOfDay(
+                hour: int.parse(existingTask!.taskTime!.split(':')[0]),
+                minute: int.parse(existingTask!.taskTime!.split(':')[1]))
+            : null);
+    final Rx<Repetition> repetition =
+        (existingTask?.repetition ?? Repetition.none).obs;
+    final Rx<TaskPriority> priority =
+        (existingTask?.priority ?? TaskPriority.medium).obs;
     final RxBool isOneTime = false.obs;
-    final RxList<int> customDays = <int>[].obs;
-    final RxInt duration = 30.obs;
+    final RxList<int> customDays =
+        <int>[...(existingTask?.customDays ?? [])].obs;
+    final RxInt duration = (existingTask?.durationMinutes ?? 30).obs;
 
     bool _requiresDate() =>
         isOneTime.value || repetition.value == Repetition.none;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Task')),
+      appBar:
+          AppBar(title: Text(existingTask == null ? 'Add Task' : 'Edit Task')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -182,8 +193,10 @@ class AddTaskView extends GetView<TaskController> {
                       'One-time / non-repeating tasks need a task date, otherwise they will never appear on any day.');
                   return;
                 }
-                final task = TaskModel(
-                  id: controller.newId(),
+                final task = (existingTask ??
+                        TaskModel(
+                            id: controller.newId(), title: '', description: ''))
+                    .copyWith(
                   title: titleCtrl.text.trim(),
                   description: descCtrl.text.trim(),
                   taskDate: pickedDate.value,
@@ -195,9 +208,12 @@ class AddTaskView extends GetView<TaskController> {
                   customDays: customDays.toList(),
                   durationMinutes: duration.value,
                   priority: priority.value,
-                  isOneTimeCustom: isOneTime.value,
                 );
-                await controller.addTask(task);
+                if (existingTask == null) {
+                  await controller.addTask(task);
+                } else {
+                  await controller.updateTask(task);
+                }
                 Get.back();
               },
               icon: const Icon(Icons.check_rounded),

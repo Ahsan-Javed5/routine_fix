@@ -33,6 +33,18 @@ class DisciplineRingHero extends StatelessWidget {
       ),
       child: Column(
         children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              _greeting(),
+              style: const TextStyle(
+                  color: Colors.white38,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3),
+            ),
+          ),
+          const SizedBox(height: 10),
           Row(
             children: [
               SizedBox(
@@ -137,6 +149,14 @@ class DisciplineRingHero extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _greeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning ☀️';
+    if (hour < 17) return 'Good afternoon 🌤️';
+    if (hour < 21) return 'Good evening 🌇';
+    return 'Winding down 🌙';
   }
 }
 
