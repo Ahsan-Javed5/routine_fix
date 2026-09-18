@@ -4,7 +4,6 @@ import '../../controllers/theme_controller.dart';
 import '../../utils/app_theme.dart';
 import '../ai_routine/ai_routine_view.dart';
 import '../home/home_view.dart';
-import '../home/widgets/ai_routine_sheet.dart';
 import '../occasional_reminder/occasional_view.dart';
 import '../reports/reports_view.dart';
 import '../settings/settings_view.dart';

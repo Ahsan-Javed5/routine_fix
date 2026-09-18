@@ -17,6 +17,23 @@ class ReminderController extends GetxController {
     occasionalList.value = await DbService.instance.loadOccasional();
   }
 
+  Future<void> updateReminder(
+    OccasionalModel item, {
+    required String title,
+    required String description,
+    required DateTime date,
+    String? time,
+  }) async {
+    item.title = title;
+    item.description = description;
+    item.date = date;
+    item.time = time;
+    await DbService.instance.saveOccasional(occasionalList);
+    occasionalList.refresh();
+    await NotificationService.instance
+        .scheduleOccasionalReminder(item.id, item.title, item.date, item.time);
+  }
+
   Future<void> addReminder(OccasionalModel item) async {
     occasionalList.add(item);
     await DbService.instance.saveOccasional(occasionalList);

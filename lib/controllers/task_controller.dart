@@ -1,85 +1,58 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../models/task_model.dart';
-import '../services/ai_service.dart';
+import '../models/ai_routine_log.dart';
 import '../services/db_service.dart';
 import '../services/notification_service.dart';
 import '../services/recurrence_service.dart';
+import '../services/ai_service.dart';
 
 class TaskController extends GetxController {
   final RxList<TaskModel> allTasks = <TaskModel>[].obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
-  static const int dailyAiLimit = 5;
+
+  static const int dailyAiLimit = 2;
   final _storage = GetStorage();
+
+  final RxInt _aiUsesToday = 0.obs;
+  final Rx<DateTime?> _aiWindowStart = Rx<DateTime?>(null);
+  final Rx<DateTime> _nowTick = DateTime.now().obs;
+  final RxList<AiRoutineLog> aiHistory = <AiRoutineLog>[].obs;
+
+  Timer? _tickTimer;
 
   @override
   void onInit() {
     super.onInit();
     loadTasks();
+    _loadAiUsage();
+    _loadAiHistory();
+    _tickTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      _nowTick.value = DateTime.now();
+      _checkWindowExpiry();
+    });
   }
 
-  String _aiUsageKey() {
-    final d = DateTime.now();
-    return 'ai_usage_${d.year}-${d.month}-${d.day}';
-  }
-
-  int get aiUsesToday => _storage.read(_aiUsageKey()) ?? 0;
-
-  bool get canUseAiToday => aiUsesToday < dailyAiLimit;
-
-  void _incrementAiUsage() {
-    _storage.write(_aiUsageKey(), aiUsesToday + 1);
-  }
-
-  Future<List<Map<String, dynamic>>> generateAiSuggestions(String goal) async {
-    if (!canUseAiToday) {
-      throw Exception(
-          'Daily AI limit reached ($dailyAiLimit/day). Try again tomorrow.');
-    }
-    final suggestions = await AiService.instance.generateRoutine(goal);
-    _incrementAiUsage();
-    return suggestions;
-  }
-
-  Future<void> addAiTasks(List<Map<String, dynamic>> picked) async {
-    for (final t in picked) {
-      final task = TaskModel(
-        id: newId(),
-        title: t['title'],
-        description: t['description'] ?? '',
-        taskTime: t['time'],
-        repetition: Repetition.daily,
-      );
-      await addTask(task);
-    }
+  @override
+  void onClose() {
+    _tickTimer?.cancel();
+    super.onClose();
   }
 
   Future<void> loadTasks() async {
     allTasks.value = await DbService.instance.loadTasks();
   }
 
-  /// Tasks that occur on the currently selected date.
   List<TaskModel> get tasksForSelectedDate => tasksForDate(selectedDate.value);
 
-  /// Tasks that occur on any given date.
   List<TaskModel> tasksForDate(DateTime date) {
-    return allTasks.where((t) {
-      if (t.archivedAtDate != null) {
-        final d = DateTime(date.year, date.month, date.day);
-        final archived = DateTime(
-          t.archivedAtDate!.year,
-          t.archivedAtDate!.month,
-          t.archivedAtDate!.day,
-        );
-
-        if (!d.isBefore(archived)) return false;
-      }
-
-      return RecurrenceService.occursOn(t, date);
-    }).toList()
+    return allTasks.where((t) => RecurrenceService.occursOn(t, date)).toList()
       ..sort((a, b) => a.priority.index.compareTo(b.priority.index));
   }
+
+  int get todayTaskCount => tasksForDate(DateTime.now()).length;
 
   String _key(DateTime date) => RecurrenceService.dateKey(date);
 
@@ -109,7 +82,6 @@ class TaskController extends GetxController {
     await DbService.instance.saveTasks(allTasks);
     allTasks.refresh();
 
-    // If all of today's tasks are now done, cancel remaining nightly nudges.
     final today = DateTime.now();
     if (_key(date) == _key(today)) {
       final todays = tasksForSelectedDate;
@@ -126,7 +98,6 @@ class TaskController extends GetxController {
     await DbService.instance.saveTasks(allTasks);
   }
 
-  /// Soft delete task for selected date onwards
   Future<void> archiveTask(TaskModel task, DateTime currentDate) async {
     final updatedTask = task.copyWith(archivedAtDate: currentDate);
     final index = allTasks.indexWhere((t) => t.id == task.id);
@@ -137,15 +108,12 @@ class TaskController extends GetxController {
     }
   }
 
-  /// Replaces all tasks (used when restoring a backup).
   Future<void> restoreTasks(List<TaskModel> tasks) async {
     allTasks.value = tasks;
     await DbService.instance.saveTasks(allTasks);
   }
 
   String newId() => const Uuid().v4();
-
-  // ---------------- Streak tracking ----------------
 
   DateTime _dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -157,18 +125,14 @@ class TaskController extends GetxController {
     return _dayOnly(earliest);
   }
 
-  /// A day only "breaks" the streak if tasks were planned for it and not
-  /// all completed. Days with nothing planned are skipped, not counted.
   bool _isPerfectDay(DateTime day) {
     final dayTasks = tasksForDate(day);
-    if (dayTasks.isEmpty) return true; // neutral, doesn't break the streak
+    if (dayTasks.isEmpty) return true;
     return dayTasks.every((t) => statusOn(t, day) == TaskStatus.done);
   }
 
   bool _hasTasks(DateTime day) => tasksForDate(day).isNotEmpty;
 
-  /// Consecutive days up to today (inclusive) where every planned task
-  /// was completed. Days with nothing planned don't break the chain.
   int get currentStreak {
     final earliest = _earliestDay;
     final today = _dayOnly(DateTime.now());
@@ -186,7 +150,6 @@ class TaskController extends GetxController {
     return streak;
   }
 
-  /// Longest streak ever achieved.
   int get bestStreak {
     final earliest = _earliestDay;
     final today = _dayOnly(DateTime.now());
@@ -204,5 +167,106 @@ class TaskController extends GetxController {
       }
     }
     return best;
+  }
+
+  void _loadAiUsage() {
+    final count = _storage.read('ai_usage_count') as int? ?? 0;
+    final startStr = _storage.read('ai_usage_window_start') as String?;
+    final start = startStr != null ? DateTime.tryParse(startStr) : null;
+    _aiUsesToday.value = count;
+    _aiWindowStart.value = start;
+    _checkWindowExpiry();
+  }
+
+  void _checkWindowExpiry() {
+    final start = _aiWindowStart.value;
+    if (start != null &&
+        DateTime.now().difference(start) >= const Duration(hours: 24)) {
+      _aiUsesToday.value = 0;
+      _aiWindowStart.value = null;
+      _storage.remove('ai_usage_count');
+      _storage.remove('ai_usage_window_start');
+    }
+  }
+
+  int get aiUsesToday {
+    _checkWindowExpiry();
+    return _aiUsesToday.value;
+  }
+
+  bool get canUseAiToday => aiUsesToday < dailyAiLimit;
+
+  String get aiLimitResetLabel {
+    final start = _aiWindowStart.value;
+    if (start == null) return '';
+    final resetAt = start.add(const Duration(hours: 24));
+    final diff = resetAt.difference(_nowTick.value);
+    if (diff.isNegative) return 'Resets shortly';
+    final h = diff.inHours;
+    final m = diff.inMinutes % 60;
+    if (h <= 0) return 'Resets in ${m}m';
+    return 'Resets in ${h}h ${m}m';
+  }
+
+  void _incrementAiUsage() {
+    _checkWindowExpiry();
+    if (_aiWindowStart.value == null) {
+      _aiWindowStart.value = DateTime.now();
+      _storage.write(
+          'ai_usage_window_start', _aiWindowStart.value!.toIso8601String());
+    }
+    _aiUsesToday.value += 1;
+    _storage.write('ai_usage_count', _aiUsesToday.value);
+  }
+
+  Future<List<Map<String, dynamic>>> generateAiSuggestions(String goal,
+      {List<String>? avoidTitles}) async {
+    if (!canUseAiToday) {
+      throw Exception(
+          'Daily AI limit reached ($dailyAiLimit/24h). $aiLimitResetLabel');
+    }
+    final suggestions = await AiService.instance
+        .generateRoutine(goal, avoidTitles: avoidTitles);
+    _incrementAiUsage();
+    return suggestions;
+  }
+
+  Future<void> addAiTasks(String goal, List<Map<String, dynamic>> all,
+      List<Map<String, dynamic>> picked) async {
+    for (final t in picked) {
+      final task = TaskModel(
+        id: newId(),
+        title: t['title'],
+        description: t['description'] ?? '',
+        taskTime: t['time'],
+        repetition: Repetition.daily,
+      );
+      await addTask(task);
+    }
+    _logAiHistory(
+        goal, all.map((e) => e['title'].toString()).toList(), picked.length);
+  }
+
+  void _loadAiHistory() {
+    final raw = _storage.read('ai_history') as List<dynamic>? ?? [];
+    aiHistory.value = raw
+        .map((e) => AiRoutineLog.fromJson(Map<String, dynamic>.from(e)))
+        .toList()
+        .reversed
+        .toList();
+  }
+
+  void _logAiHistory(String goal, List<String> titles, int addedCount) {
+    final log = AiRoutineLog(
+      id: newId(),
+      goal: goal,
+      createdAt: DateTime.now(),
+      taskTitles: titles,
+      addedCount: addedCount,
+    );
+    aiHistory.insert(0, log);
+    if (aiHistory.length > 20) aiHistory.removeRange(20, aiHistory.length);
+    _storage.write(
+        'ai_history', aiHistory.reversed.map((e) => e.toJson()).toList());
   }
 }
