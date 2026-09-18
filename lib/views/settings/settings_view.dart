@@ -21,7 +21,8 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  bool _busy = false;
+  bool _exportBusy = false;
+  bool _importBusy = false;
 
   void _feedback(String title, String message, {bool isError = false}) {
     Get.snackbar(
@@ -85,7 +86,7 @@ class _SettingsViewState extends State<SettingsView> {
           ),
         ),
         const SizedBox(height: 20),
-        _SectionLabel('Backup'),
+        const _SectionLabel('Backup'),
         Card(
           child: Column(
             children: [
@@ -95,8 +96,8 @@ class _SettingsViewState extends State<SettingsView> {
                 title: const Text('Export backup'),
                 subtitle: const Text(
                     'Save all tasks & occasional reminders as a JSON file'),
-                trailing: _busy ? const _Spinner() : null,
-                onTap: _busy ? null : () => _exportBackup(context),
+                trailing: _exportBusy ? const _Spinner() : null,
+                onTap: _exportBusy ? null : () => _exportBackup(context),
               ),
               const Divider(height: 1),
               ListTile(
@@ -104,14 +105,14 @@ class _SettingsViewState extends State<SettingsView> {
                     color: AppColors.amberGold),
                 title: const Text('Import backup'),
                 subtitle: const Text('Restore from a previously exported file'),
-                trailing: _busy ? const _Spinner() : null,
-                onTap: _busy ? null : () => _importBackup(context),
+                trailing: _importBusy ? const _Spinner() : null,
+                onTap: _importBusy ? null : () => _importBackup(context),
               ),
             ],
           ),
         ),
         const SizedBox(height: 20),
-        _SectionLabel('Data'),
+        const _SectionLabel('Data'),
         Card(
           child: ListTile(
             leading: const Icon(Icons.delete_forever_rounded,
@@ -122,10 +123,10 @@ class _SettingsViewState extends State<SettingsView> {
           ),
         ),
         const SizedBox(height: 20),
-        _SectionLabel('About'),
-        Card(
+        const _SectionLabel('About'),
+        const Card(
           child: Column(
-            children: const [
+            children: [
               ListTile(
                   leading: Icon(Icons.info_outline_rounded),
                   title: Text('RoutineFix'),
@@ -139,12 +140,13 @@ class _SettingsViewState extends State<SettingsView> {
             ],
           ),
         ),
+        const SizedBox(height: 15),
       ],
     );
   }
 
   Future<void> _exportBackup(BuildContext context) async {
-    setState(() => _busy = true);
+    setState(() => _exportBusy = true);
     try {
       final taskCtrl = Get.find<TaskController>();
       final reminderCtrl = Get.find<ReminderController>();
@@ -169,7 +171,7 @@ class _SettingsViewState extends State<SettingsView> {
     } catch (e) {
       _feedback('Export failed', 'Could not create backup: $e', isError: true);
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => _exportBusy = false);
     }
   }
 
@@ -181,7 +183,7 @@ class _SettingsViewState extends State<SettingsView> {
       );
       if (result == null || result.files.single.path == null) return;
 
-      setState(() => _busy = true);
+      setState(() => _importBusy = true);
       final file = File(result.files.single.path!);
       final content = await file.readAsString();
       final data = jsonDecode(content) as Map<String, dynamic>;
@@ -227,7 +229,7 @@ class _SettingsViewState extends State<SettingsView> {
       _feedback('Import failed', 'Could not read backup file: $e',
           isError: true);
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => _importBusy = false);
     }
   }
 
