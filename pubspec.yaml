@@ -1,7 +1,7 @@
 name: routine_fix
 description: Daily Discipline & Task Tracker App (MVC + GetX)
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -23,6 +23,7 @@ dependencies:
   file_picker: ^8.0.0
   google_generative_ai: ^0.4.7
   flutter_dotenv: ^6.0.1
+  connectivity_plus: ^6.0.0
 
 
 dev_dependencies:

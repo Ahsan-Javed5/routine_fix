@@ -54,7 +54,7 @@ class HomeView extends GetView<TaskController> {
                 hasScrollBody: false, child: _EmptyDay(date: date))
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 150),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {

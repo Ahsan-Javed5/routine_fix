@@ -7,18 +7,29 @@ class DateStrip extends StatelessWidget {
   final TaskController controller;
   const DateStrip({super.key, required this.controller});
 
+  DateTime _dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       final selected = controller.selectedDate.value;
+      final earliest = _dayOnly(controller.earliestTaskDate);
+      final canGoBack = _dayOnly(selected).isAfter(earliest);
+
       return Padding(
         padding: const EdgeInsets.fromLTRB(12, 14, 12, 6),
         child: Row(
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left_rounded),
-              onPressed: () => controller.selectedDate.value =
-                  selected.subtract(const Duration(days: 1)),
+              onPressed: canGoBack
+                  ? () {
+                      final prev = selected.subtract(const Duration(days: 1));
+                      if (!_dayOnly(prev).isBefore(earliest)) {
+                        controller.selectedDate.value = prev;
+                      }
+                    }
+                  : null,
             ),
             Expanded(
               child: InkWell(
@@ -26,9 +37,9 @@ class DateStrip extends StatelessWidget {
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,
-                    initialDate: selected,
-                    firstDate:
-                        DateTime.now().subtract(const Duration(days: 365)),
+                    initialDate:
+                        selected.isBefore(earliest) ? earliest : selected,
+                    firstDate: earliest,
                     lastDate: DateTime.now().add(const Duration(days: 365)),
                   );
                   if (picked != null) controller.selectedDate.value = picked;

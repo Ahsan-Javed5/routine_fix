@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/task_controller.dart';
@@ -5,6 +8,7 @@ import '../../utils/app_theme.dart';
 import 'widgets/ai_preset_chip_bar.dart';
 import 'widgets/ai_history_card.dart';
 import 'ai_preview_view.dart';
+import 'dart:io';
 
 class AiRoutineView extends StatefulWidget {
   const AiRoutineView({super.key});
@@ -16,6 +20,8 @@ class AiRoutineView extends StatefulWidget {
 class _AiRoutineViewState extends State<AiRoutineView> {
   final _goalCtrl = TextEditingController();
   bool _loading = false;
+  StreamSubscription? _connectivitySubscription;
+  bool _isOffline = false;
 
   static const _presets = [
     'Better sleep',
@@ -24,6 +30,32 @@ class _AiRoutineViewState extends State<AiRoutineView> {
     'Morning discipline',
     'Deep work / focus',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkConnectivity();
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen((result) {
+      _checkConnectivity();
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkConnectivity() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      setState(
+          () => _isOffline = result.isEmpty || result[0].rawAddress.isEmpty);
+    } on SocketException catch (_) {
+      setState(() => _isOffline = true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +72,32 @@ class _AiRoutineViewState extends State<AiRoutineView> {
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           children: [
+            if (_isOffline) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.emberCoral.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.wifi_off_rounded,
+                        size: 18, color: AppColors.emberCoral),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                          'No internet connection — AI features need internet to work.',
+                          style: TextStyle(
+                              fontSize: 12.5,
+                              color: AppColors.emberCoral,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             _usageBadge(usesLeft, limitReached, controller),
             const SizedBox(height: 16),
             _inputCard(context, controller, limitReached),
@@ -229,8 +287,17 @@ class _AiRoutineViewState extends State<AiRoutineView> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      Get.snackbar('AI Error', e.toString(),
-          backgroundColor: AppColors.emberCoral, colorText: Colors.white);
+      final isNetworkError = e.toString().contains('SocketException') ||
+          e.toString().contains('Failed host lookup') ||
+          e.toString().contains('Network');
+      Get.snackbar(
+        isNetworkError ? 'No Internet' : 'AI Error',
+        isNetworkError
+            ? 'Please check your internet connection and try again.'
+            : e.toString(),
+        backgroundColor: AppColors.emberCoral,
+        colorText: Colors.white,
+      );
     }
   }
 }

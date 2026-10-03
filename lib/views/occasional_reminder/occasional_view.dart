@@ -413,8 +413,7 @@ void showAddOccasionalDialog(BuildContext context,
                         final d = await showDatePicker(
                           context: context,
                           initialDate: date.value ?? DateTime.now(),
-                          firstDate:
-                              DateTime.now().subtract(const Duration(days: 1)),
+                          firstDate: DateTime.now(),
                           lastDate:
                               DateTime.now().add(const Duration(days: 365 * 2)),
                         );

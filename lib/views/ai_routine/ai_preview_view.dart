@@ -15,13 +15,15 @@ class AiPreviewView extends StatefulWidget {
 }
 
 class _AiPreviewViewState extends State<AiPreviewView> {
+  late List<Map<String, dynamic>> _suggestions;
   late List<bool> _selected;
   bool _regenerating = false;
 
   @override
   void initState() {
     super.initState();
-    _selected = List<bool>.filled(widget.suggestions.length, true);
+    _suggestions = widget.suggestions;
+    _selected = List<bool>.filled(_suggestions.length, true);
   }
 
   @override
@@ -48,36 +50,70 @@ class _AiPreviewViewState extends State<AiPreviewView> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              itemCount: widget.suggestions.length,
-              itemBuilder: (context, i) {
-                final t = widget.suggestions[i];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(
-                        color:
-                            (_selected[i] ? AppColors.signalTeal : Colors.grey)
+            child: Stack(
+              children: [
+                ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  itemCount: _suggestions.length,
+                  itemBuilder: (context, i) {
+                    final t = _suggestions[i];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: BorderSide(
+                            color: (_selected[i]
+                                    ? AppColors.signalTeal
+                                    : Colors.grey)
                                 .withOpacity(0.25)),
-                  ),
-                  child: CheckboxListTile(
-                    value: _selected[i],
-                    onChanged: (v) => setState(() => _selected[i] = v ?? false),
-                    activeColor: AppColors.signalTeal,
-                    title: Text(t['title'] ?? '',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 14.5)),
-                    subtitle: Text(
-                      '${t['description'] ?? ''}'
-                      '${t['time'] != null ? " • ${t['time']}" : ""}',
-                      style: TextStyle(fontSize: 12.5, color: Colors.grey[600]),
+                      ),
+                      child: CheckboxListTile(
+                        value: _selected[i],
+                        onChanged: (v) =>
+                            setState(() => _selected[i] = v ?? false),
+                        activeColor: AppColors.signalTeal,
+                        title: Text(t['title'] ?? '',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 14.5)),
+                        subtitle: Text(
+                          '${t['description'] ?? ''}'
+                          '${t['time'] != null ? " • ${t['time']}" : ""}',
+                          style: TextStyle(
+                              fontSize: 12.5, color: Colors.grey[600]),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                if (_regenerating)
+                  Container(
+                    color: Colors.black.withOpacity(0.08),
+                    child: const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Card(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 16),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2)),
+                                SizedBox(width: 12),
+                                Text('Regenerating...'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                );
-              },
+              ],
             ),
           ),
         ],
@@ -92,9 +128,9 @@ class _AiPreviewViewState extends State<AiPreviewView> {
                   height: 48,
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.inkNavy,
-                      side:
-                          BorderSide(color: AppColors.inkNavy.withOpacity(0.4)),
+                      foregroundColor: AppColors.signalTeal,
+                      side: BorderSide(
+                          color: AppColors.signalTeal.withOpacity(0.5)),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -111,7 +147,6 @@ class _AiPreviewViewState extends State<AiPreviewView> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                flex: 2,
                 child: SizedBox(
                   height: 48,
                   child: FilledButton.icon(
@@ -135,13 +170,15 @@ class _AiPreviewViewState extends State<AiPreviewView> {
     final controller = Get.find<TaskController>();
     setState(() => _regenerating = true);
     try {
-      // Tell the AI which titles to avoid repeating.
-      final avoid =
-          widget.suggestions.map((e) => e['title'].toString()).toList();
+      final avoid = _suggestions.map((e) => e['title'].toString()).toList();
       final fresh = await controller.generateAiSuggestions(widget.goal,
           avoidTitles: avoid);
       if (!mounted) return;
-      Get.off(() => AiPreviewView(goal: widget.goal, suggestions: fresh));
+      setState(() {
+        _suggestions = fresh;
+        _selected = List<bool>.filled(fresh.length, true);
+        _regenerating = false;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _regenerating = false);
@@ -153,10 +190,10 @@ class _AiPreviewViewState extends State<AiPreviewView> {
   Future<void> _confirm() async {
     final controller = Get.find<TaskController>();
     final picked = <Map<String, dynamic>>[
-      for (int i = 0; i < widget.suggestions.length; i++)
-        if (_selected[i]) widget.suggestions[i],
+      for (int i = 0; i < _suggestions.length; i++)
+        if (_selected[i]) _suggestions[i],
     ];
-    await controller.addAiTasks(widget.goal, widget.suggestions, picked);
+    await controller.addAiTasks(widget.goal, _suggestions, picked);
     Get.back();
     Get.snackbar('Added', '${picked.length} tasks added to your routine',
         backgroundColor: AppColors.sageGreen, colorText: Colors.white);

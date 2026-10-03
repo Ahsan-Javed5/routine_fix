@@ -13,9 +13,9 @@ class TaskController extends GetxController {
   final RxList<TaskModel> allTasks = <TaskModel>[].obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
 
-  static const int dailyAiLimit = 10;
+  static const int dailyAiLimit = 2;
   final _storage = GetStorage();
-
+  DateTime get earliestTaskDate => _earliestDay;
   final RxInt _aiUsesToday = 0.obs;
   final Rx<DateTime?> _aiWindowStart = Rx<DateTime?>(null);
   final Rx<DateTime> _nowTick = DateTime.now().obs;
