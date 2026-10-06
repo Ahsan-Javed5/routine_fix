@@ -37,6 +37,7 @@ flutter:
 
   assets:
     - .env
+    - assets/data/predefined_routines.json
 
 flutter_launcher_icons:
   android: "ic_launcher"

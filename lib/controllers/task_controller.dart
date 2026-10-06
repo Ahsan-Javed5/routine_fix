@@ -220,13 +220,13 @@ class TaskController extends GetxController {
   }
 
   Future<List<Map<String, dynamic>>> generateAiSuggestions(String goal,
-      {List<String>? avoidTitles}) async {
+      {required bool regenerate}) async {
     if (!canUseAiToday) {
       throw Exception(
           'Daily AI limit reached ($dailyAiLimit/24h). $aiLimitResetLabel');
     }
-    final suggestions = await AiService.instance
-        .generateRoutine(goal, avoidTitles: avoidTitles);
+    final suggestions =
+        await AiService.instance.generateRoutine(goal, regenerate);
     _incrementAiUsage();
     return suggestions;
   }

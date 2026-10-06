@@ -24,11 +24,40 @@ class _AiRoutineViewState extends State<AiRoutineView> {
   bool _isOffline = false;
 
   static const _presets = [
-    'Better sleep',
-    'Exam prep',
-    'Fitness & workout',
-    'Morning discipline',
-    'Deep work / focus',
+    'Better sleep hygiene',
+    'Deep sleep & night wind down',
+    'Exam prep & last minute revision',
+    'Daily study sprint',
+    'High focus study session',
+    'Ultimate gym workout',
+    'Gym for muscle gain',
+    'Gym workout for weight loss',
+    'Fat burning cardio session',
+    'Morning discipline & energy boost',
+    'Early morning power routine',
+    'Deep work & zero distractions',
+    'Peak focus & productivity hack',
+    'Daily meditation & inner peace',
+    'Stress relief & anxiety reset',
+    'Hydration tracker & water goal',
+    'Healthy eating & meal discipline',
+    'Fat loss diet plan',
+    'Clean eating & daily nutrition',
+    'Daily 30 min reading habit',
+    'Book reading & habit builder',
+    'Quick house cleaning blitz',
+    'Room organization & declutter',
+    'Skill learning & daily coding',
+    'English fluency practice',
+    'Glow up skin care routine',
+    'Night skin care & self care',
+    'Budget tracking & money saving',
+    'No scroll digital detox',
+    'Screen time reduction challenge',
+    'Full body home workout',
+    'No equipment fat loss exercise',
+    'Daily posture & core stretching',
+    'Evening reflection & journaling',
   ];
 
   @override
@@ -279,7 +308,8 @@ class _AiRoutineViewState extends State<AiRoutineView> {
     }
     setState(() => _loading = true);
     try {
-      final suggestions = await controller.generateAiSuggestions(goal);
+      final suggestions =
+          await controller.generateAiSuggestions(goal, regenerate: false);
       if (!mounted) return;
       setState(() => _loading = false);
       _goalCtrl.clear();

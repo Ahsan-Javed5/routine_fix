@@ -170,9 +170,8 @@ class _AiPreviewViewState extends State<AiPreviewView> {
     final controller = Get.find<TaskController>();
     setState(() => _regenerating = true);
     try {
-      final avoid = _suggestions.map((e) => e['title'].toString()).toList();
-      final fresh = await controller.generateAiSuggestions(widget.goal,
-          avoidTitles: avoid);
+      final fresh =
+          await controller.generateAiSuggestions(widget.goal, regenerate: true);
       if (!mounted) return;
       setState(() {
         _suggestions = fresh;
