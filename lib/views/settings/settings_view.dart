@@ -10,6 +10,7 @@ import '../../controllers/task_controller.dart';
 import '../../controllers/reminder_controller.dart';
 import '../../models/task_model.dart';
 import '../../models/occasional_model.dart';
+import '../../services/battery_prompt_service.dart';
 import '../../services/notification_service.dart';
 import '../../utils/app_theme.dart';
 
@@ -71,7 +72,7 @@ class _SettingsViewState extends State<SettingsView> {
               )),
         ),
         const SizedBox(height: 20),
-        _SectionLabel('Notifications'),
+        const _SectionLabel('Notifications'),
         Card(
           child: ListTile(
             leading: const Icon(Icons.notifications_active_rounded,
@@ -81,6 +82,7 @@ class _SettingsViewState extends State<SettingsView> {
                 'If reminders have stopped arriving, tap to re-request permission'),
             onTap: () async {
               await NotificationService.instance.init();
+              await BatteryPromptService.instance.promptFromSettings();
               _feedback('Checked', 'Notification permissions re-verified');
             },
           ),

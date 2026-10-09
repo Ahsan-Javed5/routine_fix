@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/task_controller.dart';
+import '../../services/ad_service.dart';
 import '../../utils/app_theme.dart';
 
 class AiPreviewView extends StatefulWidget {
@@ -168,6 +169,18 @@ class _AiPreviewViewState extends State<AiPreviewView> {
 
   Future<void> _regenerate() async {
     final controller = Get.find<TaskController>();
+    if (!controller.canUseAiToday) {
+      if (!controller.canWatchAdForCredit) {
+        Get.snackbar('Limit reached',
+            'No generations left. ${controller.aiLimitResetLabel}',
+            backgroundColor: AppColors.emberCoral, colorText: Colors.white);
+        return;
+      }
+      final watch = await _askToWatchAd();
+      if (watch != true) return;
+      final rewarded = await AdService.instance.showForAiCredit();
+      if (!rewarded) return;
+    }
     setState(() => _regenerating = true);
     try {
       final fresh =
@@ -185,6 +198,28 @@ class _AiPreviewViewState extends State<AiPreviewView> {
           backgroundColor: AppColors.emberCoral, colorText: Colors.white);
     }
   }
+
+  Future<bool?> _askToWatchAd() => Get.dialog<bool>(
+        AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Free generation used'),
+          content: const Text(
+              'Watch a short ad to get 1 more AI generation and regenerate this routine.'),
+          actions: [
+            TextButton(
+                onPressed: () => Get.back(result: false),
+                child: const Text('Cancel')),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.signalTeal,
+                  foregroundColor: Colors.white),
+              onPressed: () => Get.back(result: true),
+              child: const Text('Watch ad'),
+            ),
+          ],
+        ),
+      );
 
   Future<void> _confirm() async {
     final controller = Get.find<TaskController>();

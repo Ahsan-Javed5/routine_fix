@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:routine_fix/services/ad_service.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 import 'app/bindings/initial_binding.dart';
@@ -19,6 +21,8 @@ Future<void> main() async {
 
   // Schedule today's nightly nudges once at app start.
   await NotificationService.instance.scheduleNightlyNudges(DateTime.now());
+
+  MobileAds.instance.initialize().then((_) => AdService.instance.preload());
 
   runApp(const MyApp());
 }

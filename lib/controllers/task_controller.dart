@@ -13,7 +13,9 @@ class TaskController extends GetxController {
   final RxList<TaskModel> allTasks = <TaskModel>[].obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
 
-  static const int dailyAiLimit = 2;
+  static const int dailyAiLimit = 1; // free generations per 24h window
+  static const int maxAdBonusPerDay = 5; // max rewarded ads per 24h window
+  final RxInt _aiAdsWatched = 0.obs;
   final _storage = GetStorage();
   DateTime get earliestTaskDate => _earliestDay;
   final RxInt _aiUsesToday = 0.obs;
@@ -39,6 +41,27 @@ class TaskController extends GetxController {
   void onClose() {
     _tickTimer?.cancel();
     super.onClose();
+  }
+
+  int get aiAdsWatchedToday {
+    _checkWindowExpiry();
+    return _aiAdsWatched.value;
+  }
+
+  int get aiAdsLeftToday => maxAdBonusPerDay - aiAdsWatchedToday;
+
+  /// Ad button sirf tab jab free limit khatam ho aur ad bonus bacha ho.
+  bool get canWatchAdForCredit => !canUseAiToday && aiAdsLeftToday > 0;
+
+  /// Sirf rewarded ad ke "reward earned" callback se call hota hai.
+  void grantAdBonus() {
+    _checkWindowExpiry();
+    if (_aiAdsWatched.value >= maxAdBonusPerDay || _aiUsesToday.value <= 0)
+      return;
+    _aiUsesToday.value -= 1;
+    _aiAdsWatched.value += 1;
+    _storage.write('ai_usage_count', _aiUsesToday.value);
+    _storage.write('ai_ads_watched', _aiAdsWatched.value);
   }
 
   Future<void> loadTasks() async {
@@ -175,6 +198,7 @@ class TaskController extends GetxController {
     final start = startStr != null ? DateTime.tryParse(startStr) : null;
     _aiUsesToday.value = count;
     _aiWindowStart.value = start;
+    _aiAdsWatched.value = _storage.read('ai_ads_watched') as int? ?? 0;
     _checkWindowExpiry();
   }
 
@@ -184,6 +208,8 @@ class TaskController extends GetxController {
         DateTime.now().difference(start) >= const Duration(hours: 24)) {
       _aiUsesToday.value = 0;
       _aiWindowStart.value = null;
+      _aiAdsWatched.value = 0;
+      _storage.remove('ai_ads_watched');
       _storage.remove('ai_usage_count');
       _storage.remove('ai_usage_window_start');
     }

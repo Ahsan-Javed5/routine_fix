@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/task_controller.dart';
+import '../../services/ad_service.dart';
 import '../../utils/app_theme.dart';
 import 'widgets/ai_preset_chip_bar.dart';
 import 'widgets/ai_history_card.dart';
@@ -22,6 +23,7 @@ class _AiRoutineViewState extends State<AiRoutineView> {
   bool _loading = false;
   StreamSubscription? _connectivitySubscription;
   bool _isOffline = false;
+  bool _watchingAd = false;
 
   static const _presets = [
     'Better sleep hygiene',
@@ -277,9 +279,63 @@ class _AiRoutineViewState extends State<AiRoutineView> {
               label: Text(_loading ? 'Generating...' : 'Generate Routine'),
             ),
           ),
+          if (limitReached) ...[
+            const SizedBox(height: 10),
+            _watchAdSection(controller),
+          ],
         ],
       ),
     );
+  }
+
+  Widget _watchAdSection(TaskController controller) {
+    if (!controller.canWatchAdForCredit) {
+      return const Text(
+        'Daily ad bonus used up. Come back after the reset.',
+        style: TextStyle(color: Colors.white54, fontSize: 11.5),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.amberGold,
+              side: BorderSide(color: AppColors.amberGold.withOpacity(0.6)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: _watchingAd ? null : _watchAd,
+            icon: _watchingAd
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.play_circle_outline_rounded, size: 18),
+            label: const Text('Watch a short ad → +1 AI generation'),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '${controller.aiAdsLeftToday} of ${TaskController.maxAdBonusPerDay} ad bonuses left today',
+          style: const TextStyle(color: Colors.white54, fontSize: 11.5),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _watchAd() async {
+    setState(() => _watchingAd = true);
+    final rewarded = await AdService.instance.showForAiCredit();
+    if (!mounted) return;
+    setState(() => _watchingAd = false);
+    if (rewarded) {
+      Get.snackbar('Unlocked', '+1 AI generation added',
+          backgroundColor: AppColors.inkNavy, colorText: Colors.white);
+    }
   }
 
   Widget _emptyHistory() {

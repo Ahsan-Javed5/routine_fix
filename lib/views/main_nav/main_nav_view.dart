@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:routine_fix/views/main_nav/widgets/animated_ai_icon.dart';
 import '../../controllers/theme_controller.dart';
+import '../../services/battery_prompt_service.dart';
 import '../../utils/app_theme.dart';
 import '../ai_routine/ai_routine_view.dart';
 import '../home/home_view.dart';
@@ -36,6 +37,16 @@ class _MainNavViewState extends State<MainNavView> {
     'Reports',
     'Settings',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) BatteryPromptService.instance.maybePromptOnLaunch();
+      });
+    });
+  }
 
   void _toggleFab() => setState(() => _fabOpen = !_fabOpen);
 
