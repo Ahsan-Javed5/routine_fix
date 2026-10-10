@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,8 +15,21 @@ class BatteryPromptService {
 
   int get _shownCount => _storage.read(_countKey) ?? 0;
 
+  static const _channel = MethodChannel('routinefix/battery');
+
+  Future<bool> _isUnrestricted() async {
+    try {
+      return await _channel
+              .invokeMethod<bool>('isIgnoringBatteryOptimizations') ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// App launch par auto-prompt — total max 3 baar.
   Future<void> maybePromptOnLaunch() async {
+    if (await _isUnrestricted()) return;
     if (_shownCount >= maxPrompts) return;
     await _storage.write(_countKey, _shownCount + 1);
 
@@ -40,6 +54,15 @@ class BatteryPromptService {
 
   /// Settings se trigger — counter se independent.
   Future<void> promptFromSettings() async {
+    if (await _isUnrestricted()) {
+      Get.snackbar('All set', 'Background reminders are already enabled.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: AppColors.inkNavy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(12),
+          borderRadius: 12);
+      return;
+    }
     final accepted = await _showExplainerDialog();
     if (accepted == true) await openAppSettings();
   }

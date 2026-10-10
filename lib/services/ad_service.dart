@@ -10,10 +10,9 @@ class AdService {
   static final AdService instance = AdService._internal();
   AdService._internal();
 
-  // TEST rewarded ad unit ID. Release se pehle apni real ID lagayen.
-  // Development mein apne live ads pe click na karen, account ban ho sakta hai.
-  static const String _rewardedUnitId =
-      'ca-app-pub-3940256099942544/5224354917';
+  static const String _rewardedUnitId = kReleaseMode
+      ? 'ca-app-pub-XXXXXXXXXXXXXXXX/ZZZZZZZZZZ' // real
+      : 'ca-app-pub-2843623505042952/7545892994'; // Google ka test ID
 
   RewardedAd? _rewardedAd;
   bool _isLoading = false;
