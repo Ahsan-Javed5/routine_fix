@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:routine_fix/services/ad_service.dart';
+import 'package:routine_fix/utils/custom_snackbar.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 import 'app/bindings/initial_binding.dart';
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: themeController.themeMode.value.toThemeMode(),
+          routingCallback: CustomSnackbar.onRouteChange,
           initialRoute: AppRoutes.home,
           initialBinding: InitialBinding(),
           getPages: AppPages.pages,

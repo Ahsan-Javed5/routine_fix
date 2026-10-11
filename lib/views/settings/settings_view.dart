@@ -13,6 +13,7 @@ import '../../models/occasional_model.dart';
 import '../../services/battery_prompt_service.dart';
 import '../../services/notification_service.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/custom_snackbar.dart';
 
 class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
@@ -26,22 +27,9 @@ class _SettingsViewState extends State<SettingsView> {
   bool _importBusy = false;
 
   void _feedback(String title, String message, {bool isError = false}) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: isError ? AppColors.emberCoral : AppColors.inkNavy,
-      colorText: Colors.white,
-      titleText: Text(title,
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-      messageText: Text(message,
-          style: const TextStyle(color: Colors.white, fontSize: 13)),
-      margin: const EdgeInsets.all(12),
-      borderRadius: 12,
-      duration: const Duration(seconds: 4),
-      isDismissible: true,
-    );
+    isError
+        ? CustomSnackbar.error(title, message)
+        : CustomSnackbar.success(title, message);
   }
 
   @override

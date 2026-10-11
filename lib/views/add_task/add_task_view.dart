@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task_model.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/custom_snackbar.dart';
 
 class AddTaskView extends GetView<TaskController> {
   const AddTaskView({super.key, this.existingTask});
@@ -185,11 +186,12 @@ class AddTaskView extends GetView<TaskController> {
             child: FilledButton.icon(
               onPressed: () async {
                 if (titleCtrl.text.trim().isEmpty) {
-                  Get.snackbar('Missing title', 'Please enter a task title');
+                  CustomSnackbar.error(
+                      'Missing title', 'Please enter a task title');
                   return;
                 }
                 if (_requiresDate() && pickedDate.value == null) {
-                  Get.snackbar('Missing date',
+                  CustomSnackbar.error('Missing date',
                       'One-time / non-repeating tasks need a task date, otherwise they will never appear on any day.');
                   return;
                 }

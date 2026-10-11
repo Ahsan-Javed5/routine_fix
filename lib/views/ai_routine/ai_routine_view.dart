@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../controllers/task_controller.dart';
 import '../../services/ad_service.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/custom_snackbar.dart';
 import 'widgets/ai_preset_chip_bar.dart';
 import 'widgets/ai_history_card.dart';
 import 'ai_preview_view.dart';
@@ -140,6 +141,7 @@ class _AiRoutineViewState extends State<AiRoutineView> {
               ...controller.aiHistory.map((h) => AiHistoryCard(log: h)),
             ] else
               _emptyHistory(),
+            const SizedBox(height: 20),
           ],
         );
       }),
@@ -333,8 +335,10 @@ class _AiRoutineViewState extends State<AiRoutineView> {
     if (!mounted) return;
     setState(() => _watchingAd = false);
     if (rewarded) {
-      Get.snackbar('Unlocked', '+1 AI generation added',
-          backgroundColor: AppColors.inkNavy, colorText: Colors.white);
+      CustomSnackbar.success(
+        'Unlocked',
+        '+1 AI generation added',
+      );
     }
   }
 
@@ -358,8 +362,7 @@ class _AiRoutineViewState extends State<AiRoutineView> {
       BuildContext context, TaskController controller) async {
     final goal = _goalCtrl.text.trim();
     if (goal.isEmpty) {
-      Get.snackbar('Missing goal', 'Please enter or pick a goal first',
-          backgroundColor: AppColors.emberCoral, colorText: Colors.white);
+      CustomSnackbar.error('Missing goal', 'Please enter or pick a goal first');
       return;
     }
     setState(() => _loading = true);
@@ -376,13 +379,11 @@ class _AiRoutineViewState extends State<AiRoutineView> {
       final isNetworkError = e.toString().contains('SocketException') ||
           e.toString().contains('Failed host lookup') ||
           e.toString().contains('Network');
-      Get.snackbar(
+      CustomSnackbar.error(
         isNetworkError ? 'No Internet' : 'AI Error',
         isNetworkError
             ? 'Please check your internet connection and try again.'
             : e.toString(),
-        backgroundColor: AppColors.emberCoral,
-        colorText: Colors.white,
       );
     }
   }

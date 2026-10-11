@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/task_controller.dart';
 import '../../services/ad_service.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/custom_snackbar.dart';
 
 class AiPreviewView extends StatefulWidget {
   final String goal;
@@ -171,9 +172,10 @@ class _AiPreviewViewState extends State<AiPreviewView> {
     final controller = Get.find<TaskController>();
     if (!controller.canUseAiToday) {
       if (!controller.canWatchAdForCredit) {
-        Get.snackbar('Limit reached',
-            'No generations left. ${controller.aiLimitResetLabel}',
-            backgroundColor: AppColors.emberCoral, colorText: Colors.white);
+        CustomSnackbar.error(
+          'Limit reached',
+          'No generations left. ${controller.aiLimitResetLabel}',
+        );
         return;
       }
       final watch = await _askToWatchAd();
@@ -194,8 +196,10 @@ class _AiPreviewViewState extends State<AiPreviewView> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _regenerating = false);
-      Get.snackbar('AI Error', e.toString(),
-          backgroundColor: AppColors.emberCoral, colorText: Colors.white);
+      CustomSnackbar.error(
+        'AI Error',
+        e.toString(),
+      );
     }
   }
 
@@ -229,7 +233,9 @@ class _AiPreviewViewState extends State<AiPreviewView> {
     ];
     await controller.addAiTasks(widget.goal, _suggestions, picked);
     Get.back();
-    Get.snackbar('Added', '${picked.length} tasks added to your routine',
-        backgroundColor: AppColors.sageGreen, colorText: Colors.white);
+    CustomSnackbar.success(
+      'Added',
+      '${picked.length} tasks added to your routine',
+    );
   }
 }

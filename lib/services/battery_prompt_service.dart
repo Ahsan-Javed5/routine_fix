@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:routine_fix/utils/custom_snackbar.dart';
 import '../utils/app_theme.dart';
 
 class BatteryPromptService {
@@ -39,15 +40,9 @@ class BatteryPromptService {
           _countKey, maxPrompts); // user maan gaya, ab nahi poochna
       await openAppSettings();
     } else {
-      Get.snackbar(
+      CustomSnackbar.info(
         'No problem',
         'You can enable background reminders anytime from Settings → Notifications.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppColors.inkNavy,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(12),
-        borderRadius: 12,
-        duration: const Duration(seconds: 4),
       );
     }
   }
@@ -55,12 +50,10 @@ class BatteryPromptService {
   /// Settings se trigger — counter se independent.
   Future<void> promptFromSettings() async {
     if (await _isUnrestricted()) {
-      Get.snackbar('All set', 'Background reminders are already enabled.',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: AppColors.inkNavy,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(12),
-          borderRadius: 12);
+      CustomSnackbar.info(
+        'All set',
+        'Background reminders are already enabled.',
+      );
       return;
     }
     final accepted = await _showExplainerDialog();

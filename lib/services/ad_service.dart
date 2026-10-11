@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:routine_fix/utils/custom_snackbar.dart';
 import '../controllers/task_controller.dart';
 import '../utils/app_theme.dart';
 
@@ -45,8 +46,10 @@ class AdService {
     final ad = _rewardedAd;
     if (ad == null) {
       preload();
-      Get.snackbar('Ad not ready', 'Please try again in a few seconds.',
-          backgroundColor: AppColors.inkNavy, colorText: Colors.white);
+      CustomSnackbar.info(
+        'Ad not ready',
+        'Please try again in a few seconds.',
+      );
       return false;
     }
     _rewardedAd = null;
