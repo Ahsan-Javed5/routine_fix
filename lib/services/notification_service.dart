@@ -101,6 +101,14 @@ class NotificationService {
   }
 
   Future<void> scheduleNightlyNudges(DateTime today) async {
+    // clear old duplicate notifications
+    final pending = await _plugin.pendingNotificationRequests();
+    for (final p in pending) {
+      if (p.title == 'Pending Tasks Reminder') {
+        await _plugin.cancel(p.id);
+      }
+    }
+    final dayKey = '${today.year}-${today.month}-${today.day}';
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
         'nudge_channel',
@@ -118,7 +126,7 @@ class NotificationService {
             tz.local, today.year, today.month, today.day, hour, minute);
         if (time.isBefore(tz.TZDateTime.now(tz.local))) continue;
         await _plugin.zonedSchedule(
-          _idFor('nudge_$today', ''),
+          _idFor('nudge_$dayKey', '${hour}_$minute'),
           'Pending Tasks Reminder',
           'You still have pending tasks today. Finish up to keep your streak!',
           time,
@@ -132,9 +140,10 @@ class NotificationService {
   }
 
   Future<void> cancelRemainingNudges(DateTime today) async {
-    for (int hour = 20; hour <= 23; hour++) {
-      for (int minute in [0, 30]) {
-        await _plugin.cancel(_idFor('nudge_$today', '${hour}_$minute'));
+    final pending = await _plugin.pendingNotificationRequests();
+    for (final p in pending) {
+      if (p.title == 'Pending Tasks Reminder') {
+        await _plugin.cancel(p.id);
       }
     }
   }
