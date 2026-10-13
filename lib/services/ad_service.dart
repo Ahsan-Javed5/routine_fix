@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:routine_fix/utils/custom_snackbar.dart';
@@ -11,9 +11,9 @@ class AdService {
   static final AdService instance = AdService._internal();
   AdService._internal();
 
-  static const String _rewardedUnitId = kReleaseMode
-      ? 'ca-app-pub-XXXXXXXXXXXXXXXX/ZZZZZZZZZZ' // real
-      : 'ca-app-pub-2843623505042952/7545892994'; // Google ka test ID
+  static final String _rewardedUnitId = kReleaseMode
+      ? (dotenv.env['ADMOB_UNIT_ID'] ?? '') // real (release)
+      : 'ca-app-pub-3940256099942544/5224354917'; // Google test ID (debug)
 
   RewardedAd? _rewardedAd;
   bool _isLoading = false;
@@ -38,7 +38,6 @@ class AdService {
     );
   }
 
-  /// Ad dikhata hai. Reward milne par AI credit deta hai aur true return karta hai.
   Future<bool> showForAiCredit() async {
     final controller = Get.find<TaskController>();
     if (!controller.canWatchAdForCredit) return false;
