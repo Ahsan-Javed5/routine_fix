@@ -40,6 +40,9 @@ class OccasionalView extends GetView<ReminderController> {
                   child: _ReminderCard(item: item),
                 )),
           ],
+          const SizedBox(
+            height: 15,
+          ),
         ],
       );
     });
