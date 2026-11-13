@@ -136,11 +136,13 @@ class TaskController extends GetxController {
   }
 
   Future<void> deleteTask(String id) async {
+    await NotificationService.instance.cancelAllForTask(id);
     allTasks.removeWhere((t) => t.id == id);
     await DbService.instance.saveTasks(allTasks);
   }
 
   Future<void> archiveTask(TaskModel task, DateTime currentDate) async {
+    await NotificationService.instance.cancelAllForTask(task.id);
     final updatedTask = task.copyWith(archivedAtDate: currentDate);
     final index = allTasks.indexWhere((t) => t.id == task.id);
     if (index != -1) {
@@ -307,6 +309,7 @@ class TaskController extends GetxController {
       allTasks[index] = updated;
       await DbService.instance.saveTasks(allTasks);
       allTasks.refresh();
+      await NotificationService.instance.cancelAllForTask(updated.id);
       if (updated.taskTime != null && updated.taskDate != null) {
         await NotificationService.instance
             .scheduleTaskReminders(updated, updated.taskDate!);

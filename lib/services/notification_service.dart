@@ -75,6 +75,7 @@ class NotificationService {
 
     if (beforeTime.isAfter(tz.TZDateTime.now(tz.local))) {
       await _plugin.zonedSchedule(
+        payload: task.id,
         _idFor(task.id, '${occurrenceDate}_pre'),
         'Upcoming Task in 15 mins',
         task.title,
@@ -88,6 +89,7 @@ class NotificationService {
 
     if (scheduledTime.isAfter(tz.TZDateTime.now(tz.local))) {
       await _plugin.zonedSchedule(
+        payload: task.id,
         _idFor(task.id, '${occurrenceDate}_main'),
         'Task Time!',
         '${task.title} - it\'s time now.',
@@ -191,5 +193,10 @@ class NotificationService {
     );
   }
 
-  Future<void> cancelAllForTask(String taskId) async {}
+  Future<void> cancelAllForTask(String taskId) async {
+    final pending = await _plugin.pendingNotificationRequests();
+    for (final p in pending) {
+      if (p.payload == taskId) await _plugin.cancel(p.id);
+    }
+  }
 }
