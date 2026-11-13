@@ -54,6 +54,7 @@ class ReminderController extends GetxController {
   }
 
   Future<void> deleteReminder(String id) async {
+    await NotificationService.instance.cancelOccasional(id);
     occasionalList.removeWhere((e) => e.id == id);
     await DbService.instance.saveOccasional(occasionalList);
   }

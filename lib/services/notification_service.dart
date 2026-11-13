@@ -193,6 +193,9 @@ class NotificationService {
     );
   }
 
+  Future<void> cancelOccasional(String id) =>
+      _plugin.cancel(_idFor(id, '_occasional'));
+
   Future<void> cancelAllForTask(String taskId) async {
     final pending = await _plugin.pendingNotificationRequests();
     for (final p in pending) {
