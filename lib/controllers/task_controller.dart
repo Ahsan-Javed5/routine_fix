@@ -70,6 +70,23 @@ class TaskController extends GetxController {
 
   List<TaskModel> get tasksForSelectedDate => tasksForDate(selectedDate.value);
 
+  Future<void> _nudgeQueue = Future.value();
+
+  /// Aaj ke pending tasks dekh kar nudges set/cancel karta hai.
+  /// Queue is liye hai ke tez taps par do refresh ek dusre ko na kaatein.
+  Future<void> refreshNudges() {
+    _nudgeQueue = _nudgeQueue.then((_) async {
+      try {
+        final today = DateTime.now();
+        final pending = tasksForDate(today)
+            .where((t) => statusOn(t, today) != TaskStatus.done)
+            .length;
+        await NotificationService.instance.syncNightlyNudges(today, pending);
+      } catch (_) {}
+    });
+    return _nudgeQueue;
+  }
+
   List<TaskModel> tasksForDate(DateTime date) {
     return allTasks.where((t) => RecurrenceService.occursOn(t, date)).toList()
       ..sort((a, b) => a.priority.index.compareTo(b.priority.index));
@@ -111,7 +128,9 @@ class TaskController extends GetxController {
       final allDone =
           todays.every((t) => statusOn(t, today) == TaskStatus.done);
       if (allDone && todays.isNotEmpty) {
-        await NotificationService.instance.cancelRemainingNudges(today);
+        if (_key(date) == _key(DateTime.now())) {
+          await refreshNudges();
+        }
       }
     }
   }

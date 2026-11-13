@@ -100,51 +100,58 @@ class NotificationService {
     }
   }
 
-  Future<void> scheduleNightlyNudges(DateTime today) async {
-    // clear old duplicate notifications
+  static const String _nudgeTitle = 'Pending Tasks Reminder';
+
+  static const List<List<int>> _nudgeSlots = [
+    [20, 0],
+    [21, 30],
+    [23, 0],
+  ];
+
+  Future<void> _cancelNudges() async {
     final pending = await _plugin.pendingNotificationRequests();
     for (final p in pending) {
-      if (p.title == 'Pending Tasks Reminder') {
+      if (p.title == _nudgeTitle) {
         await _plugin.cancel(p.id);
       }
     }
-    final dayKey = '${today.year}-${today.month}-${today.day}';
+  }
+
+  /// pendingCount == 0 ho to koi nudge nahi, aur purane duplicates bhi hat jate hain.
+  Future<void> syncNightlyNudges(DateTime today, int pendingCount) async {
+    await _cancelNudges();
+    if (pendingCount <= 0) return;
+
     const details = NotificationDetails(
       android: AndroidNotificationDetails(
         'nudge_channel',
         'Pending Task Nudges',
-        channelDescription: 'Reminds you of pending tasks after 8 PM',
+        channelDescription: 'Reminds you of pending tasks in the evening',
         importance: Importance.defaultImportance,
       ),
       iOS: DarwinNotificationDetails(),
     );
 
-    for (int hour = 20; hour <= 23; hour++) {
-      for (int minute in [0, 30]) {
-        if (hour == 23 && minute == 30) continue;
-        final time = tz.TZDateTime(
-            tz.local, today.year, today.month, today.day, hour, minute);
-        if (time.isBefore(tz.TZDateTime.now(tz.local))) continue;
-        await _plugin.zonedSchedule(
-          _idFor('nudge_$dayKey', '${hour}_$minute'),
-          'Pending Tasks Reminder',
-          'You still have pending tasks today. Finish up to keep your streak!',
-          time,
-          details,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-          uiLocalNotificationDateInterpretation:
-              UILocalNotificationDateInterpretation.absoluteTime,
-        );
-      }
-    }
-  }
+    final dayKey = '${today.year}-${today.month}-${today.day}';
+    final now = tz.TZDateTime.now(tz.local);
+    final body = pendingCount == 1
+        ? 'You still have 1 pending task today. Finish up to keep your streak!'
+        : 'You still have $pendingCount pending tasks today. Finish up to keep your streak!';
 
-  Future<void> cancelRemainingNudges(DateTime today) async {
-    final pending = await _plugin.pendingNotificationRequests();
-    for (final p in pending) {
-      if (p.title == 'Pending Tasks Reminder') {
-        await _plugin.cancel(p.id);
-      }
+    for (final slot in _nudgeSlots) {
+      final time = tz.TZDateTime(
+          tz.local, today.year, today.month, today.day, slot[0], slot[1]);
+      if (!time.isAfter(now)) continue;
+      await _plugin.zonedSchedule(
+        _idFor('nudge_$dayKey', '${slot[0]}_${slot[1]}'),
+        _nudgeTitle,
+        body,
+        time,
+        details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
     }
   }
 

@@ -33,7 +33,7 @@ class OccasionalView extends GetView<ReminderController> {
             const SizedBox(height: 12),
           ],
           if (history.isNotEmpty) ...[
-            _SectionLabel('History'),
+            const _SectionLabel('History'),
             const SizedBox(height: 8),
             ...history.map((item) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),

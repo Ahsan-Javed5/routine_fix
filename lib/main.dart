@@ -20,9 +20,6 @@ Future<void> main() async {
   await NotificationService.instance.init();
   await dotenv.load(fileName: ".env");
 
-  // Schedule today's nightly nudges once at app start.
-  await NotificationService.instance.scheduleNightlyNudges(DateTime.now());
-
   MobileAds.instance.initialize().then((_) => AdService.instance.preload());
 
   runApp(const MyApp());
